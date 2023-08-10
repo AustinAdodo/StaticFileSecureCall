@@ -54,7 +54,7 @@ namespace StaticFileSecureCall.Services
         }
 
         //KeyGen
-        static string GenerateRandomString(int length = 16)
+        public static string GenerateRandomString(int length = 16)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             Random random = new Random();
