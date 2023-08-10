@@ -14,6 +14,7 @@ namespace StaticFileSecureCall.Controllers
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IKeyGenerator _generator;
+
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IHttpContextAccessor contextAccessor, ILogger logger)
         {
             _authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
@@ -26,6 +27,7 @@ namespace StaticFileSecureCall.Controllers
         public IActionResult Index()
         {
             string message = $"Api works fine and is ready to go! :)";
+            _logger.LogInformation("Success health check initiated successfully");
             return Ok(message);
         }
 
