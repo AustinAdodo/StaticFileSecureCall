@@ -14,13 +14,15 @@ internal class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddLogging();
         IConfiguration configuration = new ConfigurationBuilder()
            .SetBasePath(Directory.GetCurrentDirectory())
            .AddJsonFile("appsettings.json")
            .Build();
         var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>(); //register authorized Ip addreses
-        builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
-        
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.

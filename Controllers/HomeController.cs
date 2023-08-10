@@ -11,11 +11,11 @@ namespace StaticFileSecureCall.Controllers
     public class HomeController : Controller
     {
         private readonly string[] _authorizedIpAddresses;
-        private readonly ILogger _logger;
+        private readonly ILogger<HomeController> _logger;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IKeyGenerator _generator;
 
-        public HomeController(IConfiguration configuration, IKeyGenerator generator, IHttpContextAccessor contextAccessor, ILogger logger)
+        public HomeController(IConfiguration configuration, IKeyGenerator generator, IHttpContextAccessor contextAccessor, ILogger<HomeController> logger)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>())?? new string[] {"192.168.1.1" };
             _generator = generator;

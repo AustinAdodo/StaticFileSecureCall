@@ -13,10 +13,12 @@
 
         public async Task Invoke(HttpContext context)
         {
-            var authorizedIpAddresses = _configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-
+            string[]? authorizedIpAddresses = _configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
             var remoteIpAddress = context.Connection.RemoteIpAddress;
-            if (authorizedIpAddresses.Contains(remoteIpAddress.ToString()))
+            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+                ? remoteIpAddress.MapToIPv4().ToString() // Convert IPv6 to IPv4 format
+                : remoteIpAddress.ToString();
+            if (authorizedIpAddresses.Contains(formattedIpAddress))
             {
                 await _next(context);
             }
