@@ -2,6 +2,6 @@
 {
     public interface IKeyGenerator
     {
-       string GenerateKey();   
+       void GenerateKey();   
     }
 }

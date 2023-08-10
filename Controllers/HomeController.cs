@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using StaticFileSecureCall.Services;
 using System.IO;
 
 
@@ -10,9 +11,15 @@ namespace StaticFileSecureCall.Controllers
     public class HomeController : Controller
     {
         private readonly string[] _authorizedIpAddresses;
-        public HomeController(IConfiguration configuration)
+        private readonly ILogger _logger;
+        private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IKeyGenerator _generator;
+        public HomeController(IConfiguration configuration, IKeyGenerator generator, IHttpContextAccessor contextAccessor, ILogger logger)
         {
             _authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
+            _generator = generator;
+            _contextAccessor = contextAccessor;
+            _logger = logger;
         }
 
         [HttpGet("check")]
