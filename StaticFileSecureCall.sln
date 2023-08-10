@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StaticFileSecureCall", "StaticFileSecureCall.csproj", "{890D02DB-B6DD-4A86-9455-9CE797DFA2DC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestsForStaticFileSecureCall", "..\TestsForStaticFileSecureCall\TestsForStaticFileSecureCall.csproj", "{D9E5CEAE-2498-4528-A4C0-8CA28D4BC138}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{890D02DB-B6DD-4A86-9455-9CE797DFA2DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{890D02DB-B6DD-4A86-9455-9CE797DFA2DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{890D02DB-B6DD-4A86-9455-9CE797DFA2DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9E5CEAE-2498-4528-A4C0-8CA28D4BC138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9E5CEAE-2498-4528-A4C0-8CA28D4BC138}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9E5CEAE-2498-4528-A4C0-8CA28D4BC138}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9E5CEAE-2498-4528-A4C0-8CA28D4BC138}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

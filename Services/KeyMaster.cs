@@ -60,6 +60,16 @@ namespace StaticFileSecureCall.Services
             Random random = new Random();
             return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
         }
+
+        public void ConfigureKey()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RetrieveKey()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

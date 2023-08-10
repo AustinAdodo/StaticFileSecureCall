@@ -2,6 +2,8 @@
 {
     public interface IKeyGenerator
     {
-       void GenerateKey();   
+        void GenerateKey();
+        void ConfigureKey();
+        void RetrieveKey();
     }
 }
