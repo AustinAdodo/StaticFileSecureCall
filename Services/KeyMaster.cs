@@ -1,6 +1,10 @@
 ﻿using System.Net.Mail;
 using System.Net;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Amazon.SecretsManager;
+using Amazon;
+using Amazon.SecretsManager.Model;
+using Amazon.Runtime;
 //using Amazon.SecretsManager.Extensions.Caching;
 
 namespace StaticFileSecureCall.Services
@@ -9,10 +13,12 @@ namespace StaticFileSecureCall.Services
     {
         private readonly string randomString;
         private readonly string name;
-        public KeyMaster()
+        private readonly ILogger<KeyMaster> _logger;
+        public KeyMaster(ILogger<KeyMaster> logger)
         {
             randomString = GenerateRandomString();
             name = $"request{DateTime.Now:HH:mm:ss}";
+            _logger = logger;
         }
 
         private void GenerateKey()
@@ -70,12 +76,37 @@ namespace StaticFileSecureCall.Services
         }
 
         //save to AWS secret Manager.
-        public void ConfigureKey()
+        public async Task ConfigureKeyAsync()
         {
             GenerateKey();
-            //randomString
-            //name
+
+            // Create AWSCredentials instance using your access key and secret key
+            AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+
+            AmazonSecretsManagerClient secretsManagerClient = new AmazonSecretsManagerClient(
+                credentials,
+                RegionEndpoint.EUWest1 // Determine the best region discussing with Tunde.
+            );
+
+            string secretName = name;
+            string secretValue = randomString;
+
+            var request = new PutSecretValueRequest
+            {
+                SecretId = secretName,
+                SecretString = secretValue
+            };
+
+            PutSecretValueResponse response = await secretsManagerClient.PutSecretValueAsync(request);
+
+            if (response.HttpStatusCode == HttpStatusCode.OK) // Check if the response indicates success
+            {
+                _logger.LogInformation("Secret successfully deployed from KeyGen to AWS");
+            }
+
+            secretsManagerClient.Dispose();
         }
+
 
         //retrieve from Amazon Secret Manager.
         public void RetrieveKey()

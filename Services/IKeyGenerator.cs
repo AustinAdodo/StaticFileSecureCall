@@ -2,7 +2,7 @@
 {
     public interface IKeyGenerator
     {
-        void ConfigureKey();
+        Task ConfigureKeyAsync();
         void RetrieveKey();
     }
 }
