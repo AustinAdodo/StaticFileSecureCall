@@ -4,11 +4,17 @@ using System.IO;
 
 namespace StaticFileSecureCall.Controllers
 {
-
+   
     [ApiController]
     [Route("api/[controller]")]
     public class HomeController : Controller
     {
+        private readonly string[] _authorizedIpAddresses;
+        public HomeController(IConfiguration configuration)
+        {
+            _authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
+        }
+
         [HttpGet("check")]
         public IActionResult Index()
         {
@@ -16,22 +22,26 @@ namespace StaticFileSecureCall.Controllers
             return Ok(message);
         }
 
-        //public async Task<IActionResult>SendMessage()
-        //{
-        //    Task<string> message = await Task.FromResult( "use the same api with secret key provided to you in the body of the api");
-        //    return Ok(message);
-        //}
-
         [HttpGet("reqCurrent")]
-        public async IActionResult ReqCurrent()
+        public IActionResult ReqCurrent()
         {
-            //await SendMessage();
-            return RedirectToAction("Index","Authorization");   
+            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (_authorizedIpAddresses.Contains(remoteIpAddress))
+            {
+                // Authorized logic
+                string message = $"use the same API endpoint with secretkey provided to you by admin to activate Download.";
+                return Ok(message);
+            }
+            else
+            {
+                return Forbid(); // 403 Forbidden
+            }
         }
 
         [HttpGet("{fileName}")]
         private IActionResult Download(string fileName)
         {
+            //retrieve cached Generated Password secret from AWS vault.
             //aws filepath
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
 

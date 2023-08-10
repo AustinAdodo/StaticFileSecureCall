@@ -1,35 +1,48 @@
 using Microsoft.Extensions.Configuration;
+using StaticFileSecureCall;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+internal class Program
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    app.UseDeveloperExceptionPage();
+    private static void Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+
+        // Add services to the container.
+
+        builder.Services.AddControllers();
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+        IConfiguration configuration = new ConfigurationBuilder()
+           .SetBasePath(Directory.GetCurrentDirectory())
+           .AddJsonFile("appsettings.json")
+           .Build();
+        var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>(); //register authorized Ip addreses
+        
+        var app = builder.Build();
+
+        // Configure the HTTP request pipeline.
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseMiddleware<IpAuthorizationMiddleware>();//custom Middlewar registered.
+
+        app.UseRouting();
+
+        app.UseStaticFiles();//static files included.
+
+        app.UseHttpsRedirection();
+
+        app.UseAuthorization();
+
+        //app.UseEndpoints();
+
+        app.MapControllers();
+
+        app.Run();
+    }
 }
-
-app.UseRouting();
-
-app.UseStaticFiles();//static files included.
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-//app.UseEndpoints();
-
-app.MapControllers();
-
-app.Run();
