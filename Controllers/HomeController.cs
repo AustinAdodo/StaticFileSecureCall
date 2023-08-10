@@ -51,11 +51,13 @@ namespace StaticFileSecureCall.Controllers
         [HttpGet("reqCurrent/{name}")]
         public IActionResult ReqCurrent([FromBody] string secret)
         {
-            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            //retrieve cached Generated Password secret from AWS vault.
             string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
+            string filename = name; //dummy
+            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
             {
-                return RedirectToAction("Download");
+                return RedirectToAction("Download", new { name = filename });
             }
             else
             {
@@ -66,8 +68,6 @@ namespace StaticFileSecureCall.Controllers
         [HttpGet("{fileName}")]
         private IActionResult Download(string fileName)
         {
-            //retrieve cached Generated Password secret from AWS vault.
-            //aws filepath
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
             if (!System.IO.File.Exists(filePath)) return NotFound();
             var memory = new MemoryStream();
