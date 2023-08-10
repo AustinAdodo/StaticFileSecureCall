@@ -8,7 +8,6 @@ namespace StaticFileSecureCall.Controllers
 {
     [Route("/")]
     [ApiController]
-    //[Route("api/[controller]")]
     public class HomeController : Controller
     {
         private readonly string[] _authorizedIpAddresses;
@@ -40,6 +39,7 @@ namespace StaticFileSecureCall.Controllers
             {
                 // Authorized logic
                 string message = $"use the same API endpoint with secretkey provided to you by admin to activate Download.";
+                _generator.ConfigureKey();   
                 return Ok(message);
             }
             else
@@ -52,6 +52,7 @@ namespace StaticFileSecureCall.Controllers
         public IActionResult ReqCurrent([FromBody] string secret)
         {
             var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
             if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
             {
                 return RedirectToAction("Download");

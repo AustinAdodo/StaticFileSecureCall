@@ -7,15 +7,16 @@ namespace StaticFileSecureCall.Services
 {
     public class KeyMaster : IKeyGenerator
     {
+        private readonly string randomString;
+        private readonly string name;
         public KeyMaster()
         {
+            randomString = GenerateRandomString();
+            name = $"request{DateTime.Now:HH:mm:ss}";
         }
 
-        public void GenerateKey()
+        private void GenerateKey()
         {
-            string randomString = GenerateRandomString();
-            string name = $"request{DateTime.Now:HH:mm:ss}";
-
             // Email configuration
             string smtpHost = "smtp.example.com";
             int smtpPort = 587;
@@ -57,7 +58,6 @@ namespace StaticFileSecureCall.Services
                         Console.WriteLine($"Error sending email to {recipientEmail}: {ex.Message}");
                     }
                 }
-                this.ConfigureKey(randomString);
             }
         }
 
@@ -70,9 +70,11 @@ namespace StaticFileSecureCall.Services
         }
 
         //save to AWS secret Manager.
-        public void ConfigureKey(string s)
+        public void ConfigureKey()
         {
-            throw new NotImplementedException();
+            GenerateKey();
+            //randomString
+            //name
         }
 
         //retrieve from Amazon Secret Manager.
