@@ -39,7 +39,7 @@ namespace StaticFileSecureCall.Controllers
             {
                 // Authorized logic
                 string message = $"use the same API endpoint with secretkey provided to you by admin to activate Download.";
-                _generator.ConfigureKey();   
+                _generator.ConfigureKeyAsync();   
                 return Ok(message);
             }
             else

@@ -33,7 +33,7 @@ internal class Program
             app.UseDeveloperExceptionPage();
         }
 
-        app.UseMiddleware<IpAuthorizationMiddleware>();//custom Middlewar registered.
+        app.UseMiddleware<IpAuthorizationMiddleware>();//custom Middleware registered.
 
         app.UseRouting();
 

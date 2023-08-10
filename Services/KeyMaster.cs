@@ -27,7 +27,7 @@ namespace StaticFileSecureCall.Services
             string smtpHost = "smtp.example.com";
             int smtpPort = 587;
             string smtpUsername = "info.kygosystems@gmail.com";
-            string smtpPassword = "your-email-password";//retrieve from secret manager.
+            string smtpPassword = "your-email-password";  //retrieve from secret manager.
             bool enableSsl = true;
 
             // Email addresses
@@ -79,31 +79,23 @@ namespace StaticFileSecureCall.Services
         public async Task ConfigureKeyAsync()
         {
             GenerateKey();
-
-            // Create AWSCredentials instance using your access key and secret key
-            AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-
+            AWSCredentials credentials = new BasicAWSCredentials(name, randomString);
             AmazonSecretsManagerClient secretsManagerClient = new AmazonSecretsManagerClient(
                 credentials,
                 RegionEndpoint.EUWest1 // Determine the best region discussing with Tunde.
             );
-
             string secretName = name;
             string secretValue = randomString;
-
             var request = new PutSecretValueRequest
             {
                 SecretId = secretName,
                 SecretString = secretValue
             };
-
             PutSecretValueResponse response = await secretsManagerClient.PutSecretValueAsync(request);
-
             if (response.HttpStatusCode == HttpStatusCode.OK) // Check if the response indicates success
             {
                 _logger.LogInformation("Secret successfully deployed from KeyGen to AWS");
             }
-
             secretsManagerClient.Dispose();
         }
 
