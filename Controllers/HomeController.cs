@@ -16,16 +16,16 @@ namespace StaticFileSecureCall.Controllers
             return Ok(message);
         }
 
-        public async Task<IActionResult>SendMessage()
-        {
-            Task<string> message = await Task.FromResult( "use the same api with secret key provided to you in the body of the api");
-            return Ok(message);
-        }
+        //public async Task<IActionResult>SendMessage()
+        //{
+        //    Task<string> message = await Task.FromResult( "use the same api with secret key provided to you in the body of the api");
+        //    return Ok(message);
+        //}
 
         [HttpGet("reqCurrent")]
         public async IActionResult ReqCurrent()
         {
-            await SendMessage();
+            //await SendMessage();
             return RedirectToAction("Index","Authorization");   
         }
 
