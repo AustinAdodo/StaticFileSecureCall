@@ -3,7 +3,7 @@
     public interface IKeyGenerator
     {
         void GenerateKey();
-        void ConfigureKey();
+        void ConfigureKey(string s);
         void RetrieveKey();
     }
 }

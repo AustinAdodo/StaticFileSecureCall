@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using StaticFileSecureCall;
+using StaticFileSecureCall.Services;
 
 internal class Program
 {
@@ -18,6 +19,7 @@ internal class Program
            .AddJsonFile("appsettings.json")
            .Build();
         var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>(); //register authorized Ip addreses
+        builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
         
         var app = builder.Build();
 

@@ -47,6 +47,20 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
+        [HttpGet("reqCurrent/{name}")]
+        public IActionResult ReqCurrent([FromBody]string secret)
+        {
+            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
+            {
+                return RedirectToAction("Download");
+            }
+            else
+            {
+                return Forbid("Unauthorized Request"); // 403 Forbidden
+            }
+        }
+
         [HttpGet("{fileName}")]
         private IActionResult Download(string fileName)
         {

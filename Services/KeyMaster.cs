@@ -1,10 +1,16 @@
 ﻿using System.Net.Mail;
 using System.Net;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+//using Amazon.SecretsManager.Extensions.Caching;
 
 namespace StaticFileSecureCall.Services
 {
     public class KeyMaster : IKeyGenerator
     {
+        public KeyMaster()
+        {
+        }
+
         public void GenerateKey()
         {
             string randomString = GenerateRandomString();
@@ -18,7 +24,7 @@ namespace StaticFileSecureCall.Services
             bool enableSsl = true;
 
             // Email addresses
-            string[] recipientEmails = { "kdonaldresources@gmail.com", "abtesting911@gmail.com","subzbelow@gmail.com" };
+            string[] recipientEmails = { "kdonaldresources@gmail.com", "abtesting911@gmail.com", "subzbelow@gmail.com" };
 
             // Create SMTP client
             using (SmtpClient smtpClient = new SmtpClient(smtpHost, smtpPort))
@@ -33,9 +39,10 @@ namespace StaticFileSecureCall.Services
                     MailMessage mailMessage = new MailMessage
                     {
                         From = new MailAddress(smtpUsername),
-                        Subject = $"SecretKey and Name at {DateTime.Now.ToString(@"ddd")}, {DateTime.Now.ToString(@"dd")} " +
+                        Subject = $"Secret Key and Name at {DateTime.Now.ToString(@"dddd")}, {DateTime.Now.ToString(@"dd")} " +
                         $"{DateTime.Now:HH:mm:ss}",
-                        Body = $"Hi there,\n here's your Name and Secret respectively; Name: {name} Secret: {randomString} \n regards Austin.",
+                        Body = $"Hi there,\n here's your Name and Secret respectively;\n Name: {name}\n Secret: {randomString} " +
+                        $"\n\n\n regards Austin live ai.",
                         IsBodyHtml = false
                     };
                     mailMessage.To.Add(recipientEmail);
@@ -50,6 +57,7 @@ namespace StaticFileSecureCall.Services
                         Console.WriteLine($"Error sending email to {recipientEmail}: {ex.Message}");
                     }
                 }
+                this.ConfigureKey(randomString);
             }
         }
 
@@ -61,14 +69,26 @@ namespace StaticFileSecureCall.Services
             return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public void ConfigureKey()
+        //save to AWS secret Manager.
+        public void ConfigureKey(string s)
         {
             throw new NotImplementedException();
         }
 
+        //persist to Amaon Secret Manager.
         public void RetrieveKey()
         {
-            throw new NotImplementedException();
+            //    private const string MySecretName = "MySecret";
+
+            //private SecretsManagerCache cache = new SecretsManagerCache();
+
+            //public async Task<Response> FunctionHandlerAsync(string input, ILambdaContext context)
+            //{
+            //    string MySecret = await cache.GetSecretString(MySecretName);
+
+            //    // Use the secret, return success
+
+            //}
         }
     }
 }
