@@ -20,7 +20,7 @@ namespace StaticFileSecureCall.Services
             string smtpHost = "smtp.example.com";
             int smtpPort = 587;
             string smtpUsername = "info.kygosystems@gmail.com";
-            string smtpPassword = "your-email-password";
+            string smtpPassword = "your-email-password";//retrieve from secret manager.
             bool enableSsl = true;
 
             // Email addresses
@@ -42,7 +42,7 @@ namespace StaticFileSecureCall.Services
                         Subject = $"Secret Key and Name at {DateTime.Now.ToString(@"dddd")}, {DateTime.Now.ToString(@"dd")} " +
                         $"{DateTime.Now:HH:mm:ss}",
                         Body = $"Hi there,\n here's your Name and Secret respectively;\n Name: {name}\n Secret: {randomString} " +
-                        $"\n\n\n regards Austin live ai.",
+                        $"\n\n\n regards Austin.live.ai.",
                         IsBodyHtml = false
                     };
                     mailMessage.To.Add(recipientEmail);
@@ -75,7 +75,7 @@ namespace StaticFileSecureCall.Services
             throw new NotImplementedException();
         }
 
-        //persist to Amaon Secret Manager.
+        //retrieve from Amazon Secret Manager.
         public void RetrieveKey()
         {
             //    private const string MySecretName = "MySecret";

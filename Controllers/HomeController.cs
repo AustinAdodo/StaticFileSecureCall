@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StaticFileSecureCall.Services;
+using Microsoft.AspNetCore.StaticFiles;
 using System.IO;
 
 
 namespace StaticFileSecureCall.Controllers
 {
-   
+    [Route("/")]
     [ApiController]
-    [Route("api/[controller]")]
+    //[Route("api/[controller]")]
     public class HomeController : Controller
     {
         private readonly string[] _authorizedIpAddresses;
@@ -17,13 +18,13 @@ namespace StaticFileSecureCall.Controllers
 
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IHttpContextAccessor contextAccessor, ILogger logger)
         {
-            _authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
+            _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>())?? new string[] {"192.168.1.1" };
             _generator = generator;
             _contextAccessor = contextAccessor;
             _logger = logger;
         }
 
-        [HttpGet("check")]
+        [HttpGet("status")]
         public IActionResult Index()
         {
             string message = $"Api works fine and is ready to go! :)";
@@ -48,7 +49,7 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("reqCurrent/{name}")]
-        public IActionResult ReqCurrent([FromBody]string secret)
+        public IActionResult ReqCurrent([FromBody] string secret)
         {
             var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
@@ -67,24 +68,20 @@ namespace StaticFileSecureCall.Controllers
             //retrieve cached Generated Password secret from AWS vault.
             //aws filepath
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound();
-
+            if (!System.IO.File.Exists(filePath)) return NotFound();
             var memory = new MemoryStream();
             using (var stream = new FileStream(filePath, FileMode.Open))
             {
                 stream.CopyTo(memory);
             }
             memory.Position = 0;
-
             return File(memory, GetContentType(filePath), Path.GetFileName(filePath));
         }
 
         private string GetContentType(string path)
         {
-            var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
-            string contentType;
+            var provider = new FileExtensionContentTypeProvider();
+            string? contentType;
             if (!provider.TryGetContentType(path, out contentType))
             {
                 contentType = "application/octet-stream";
