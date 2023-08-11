@@ -26,11 +26,9 @@ namespace StaticFileSecureCall.Services
         {
             string smtpHost = "smtp.gmail.com";
             int smtpPort = 465;  // Using port 465 to ensure SSL/TLS is configured.
-            string smtpUsername = "info.kygosystems@gmail.com";
-            string smtpPassword = RetrieveKey().Result;
+            string smtpUsername = RetrieveKeyAsync().Result[1];
+            string smtpPassword = RetrieveKeyAsync().Result[0];
             bool enableSsl = true;
-
-            // Email addresses
             string[] recipientEmails = { "kdonaldresources@gmail.com", "abtesting911@gmail.com", "subzbelow@gmail.com" };
 
             // Create SMTP client
@@ -103,35 +101,43 @@ namespace StaticFileSecureCall.Services
         }
 
         //retrieve from AWS Secret Manager.
-        public async Task<string> RetrieveKey()
+        public async Task<string[]> RetrieveKeyAsync()
         {
             string secretName = "mailpass";
-            string secretValue = string.Empty;
-            using (var secretsManagerClient = new AmazonSecretsManagerClient(RegionEndpoint.USWest2))
+            string secretEmail = "mailname";
+            using (var secretsManagerClient = new AmazonSecretsManagerClient(Amazon.RegionEndpoint.USWest2))
             {
                 var getRequest = new GetSecretValueRequest
                 {
                     SecretId = secretName
                 };
+                var getRequest1 = new GetSecretValueRequest
+                {
+                    SecretId = secretEmail
+                };
                 try
                 {
                     var getResponse = await secretsManagerClient.GetSecretValueAsync(getRequest);
-                    secretValue = getResponse.SecretString;
-                    _logger.LogInformation("Secret successfully retrieved.");
+                    var getResponse1 = await secretsManagerClient.GetSecretValueAsync(getRequest1);
+                    string[] secretValue = new string[2];
+                    secretValue[0] = getResponse.SecretString;
+                    secretValue[1] = getResponse1.SecretString;
+                    _logger.LogInformation("Secrets successfully retrieved.");
+                    return secretValue;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Error retrieving secret: " + ex.Message);
+                    _logger.LogError("Error retrieving secrets: " + ex.Message);
+                    throw;
                 }
             }
-            return secretValue;
-            //private SecretsManagerCache cache = new SecretsManagerCache();
-            //public async Task<Response> FunctionHandlerAsync(string input, ILambdaContext context)
-            //{
-            //    string MySecret = await cache.GetSecretString(MySecretName);
-            //    // Use the secret, return success
-            //}
         }
     }
 }
+//private SecretsManagerCache cache = new SecretsManagerCache();
+//public async Task<Response> FunctionHandlerAsync(string input, ILambdaContext context)
+//{
+//    string MySecret = await cache.GetSecretString(MySecretName);
+//    // Use the secret, return success
+//}
 

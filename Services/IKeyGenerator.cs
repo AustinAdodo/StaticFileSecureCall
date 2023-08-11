@@ -2,7 +2,7 @@
 {
     public interface IKeyGenerator
     {
-        Task ConfigureKeyAsync();
-        Task<string> RetrieveKey();
+       public Task ConfigureKeyAsync();
+       public Task<string[]> RetrieveKeyAsync();
     }
 }
