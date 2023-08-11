@@ -19,6 +19,7 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
+        builder.Services.AddScoped<IPersistence, PersistenceService>();
         builder.Services.AddDbContextPool<AppDbContext>(options =>
    options.UseSqlServer(builder.Configuration.GetConnectionString("OtherConnection")));
         builder.Services.AddDbContextPool<AppDbContext>(options =>
