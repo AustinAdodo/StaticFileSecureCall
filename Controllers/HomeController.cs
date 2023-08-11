@@ -17,7 +17,8 @@ namespace StaticFileSecureCall.Controllers
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IKeyGenerator _generator;
 
-        public HomeController(IConfiguration configuration, IKeyGenerator generator, IHttpContextAccessor contextAccessor, ILogger<HomeController> logger)
+        public HomeController(IConfiguration configuration, IKeyGenerator generator, 
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>())?? new string[] {"192.168.1.1" };
             _generator = generator;
@@ -71,7 +72,7 @@ namespace StaticFileSecureCall.Controllers
         private IActionResult Download(string fileName)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
-            if (!System.IO.File.Exists(filePath)) return NotFound();
+            if (!System.IO.File.Exists(filePath)) return NotFound("The file pathname or directory could not be located");
             var memory = new MemoryStream();
             using (var stream = new FileStream(filePath, FileMode.Open))
             {
