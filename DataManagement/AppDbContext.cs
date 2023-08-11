@@ -3,12 +3,13 @@ using System.Reflection.Emit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using StaticFileSecureCall.Models;
 using Microsoft.Extensions.Logging;
 
 
 namespace StaticFileSecureCall.DataManagement
 {
-
+    //Object layer Management.
     public class AppDbContext : IdentityDbContext
     {
         //Private readonly IUserResolver

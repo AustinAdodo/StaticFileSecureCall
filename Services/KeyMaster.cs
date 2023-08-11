@@ -68,6 +68,8 @@ namespace StaticFileSecureCall.Services
         }
 
         //KeyGen
+        //Key Generation Algorith developed by Austin.
+        //Further updates to be considered.
         public static string GenerateRandomString(int length = 16)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789£#~&%_-$@?/";
@@ -100,7 +102,7 @@ namespace StaticFileSecureCall.Services
         }
 
 
-        //retrieve from Amazon Secret Manager.
+        //retrieve from AWS Secret Manager.
         public void RetrieveKey()
         {
             //    private const string MySecretName = "MySecret";
