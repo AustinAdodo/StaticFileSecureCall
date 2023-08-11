@@ -22,7 +22,7 @@ internal class Program
         builder.Services.AddDbContextPool<AppDbContext>(options =>
    options.UseSqlServer(builder.Configuration.GetConnectionString("OtherConnection")));
         builder.Services.AddDbContextPool<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))); //autodetect version
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddLogging();
         IConfiguration configuration = new ConfigurationBuilder()
