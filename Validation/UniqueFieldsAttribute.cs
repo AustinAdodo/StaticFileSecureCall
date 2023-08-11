@@ -16,7 +16,6 @@ namespace StaticFileSecureCall.Validation
             _fieldNames = fieldNames;
             _errorMessage = "Duplicate Values detected on model field";
         }
-        //public string[] names { get { return _fieldNames; } }
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
             AppDbContext dbContext = (AppDbContext)validationContext.GetService(typeof(AppDbContext));

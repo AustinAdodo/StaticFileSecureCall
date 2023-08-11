@@ -3,6 +3,6 @@
     public interface IKeyGenerator
     {
         Task ConfigureKeyAsync();
-        void RetrieveKey();
+        Task<string> RetrieveKey();
     }
 }

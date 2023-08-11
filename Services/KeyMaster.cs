@@ -5,6 +5,7 @@ using Amazon.SecretsManager;
 using Amazon;
 using Amazon.SecretsManager.Model;
 using Amazon.Runtime;
+using System.Runtime.Intrinsics.X86;
 //using Amazon.SecretsManager.Extensions.Caching;
 
 namespace StaticFileSecureCall.Services
@@ -23,11 +24,10 @@ namespace StaticFileSecureCall.Services
 
         private void SendGeneratedKey()
         {
-            // Email configuration
-            string smtpHost = "smtp.example.com";
-            int smtpPort = 587;
+            string smtpHost = "smtp.gmail.com";
+            int smtpPort = 465;  // Using port 465 to ensure SSL/TLS is configured.
             string smtpUsername = "info.kygosystems@gmail.com";
-            string smtpPassword = "your-email-password";  //retrieve from secret manager.
+            string smtpPassword = RetrieveKey().Result;
             bool enableSsl = true;
 
             // Email addresses
@@ -39,7 +39,7 @@ namespace StaticFileSecureCall.Services
                 smtpClient.UseDefaultCredentials = false;
                 smtpClient.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
                 smtpClient.EnableSsl = enableSsl;
-                //send to AWS vault.
+                //smtpClient.Security
                 foreach (string recipientEmail in recipientEmails)
                 {
                     // Create the email message
@@ -48,20 +48,21 @@ namespace StaticFileSecureCall.Services
                         From = new MailAddress(smtpUsername),
                         Subject = $"Secret Key and Name at {DateTime.Now.ToString(@"dddd")}, {DateTime.Now.ToString(@"dd")} " +
                         $"{DateTime.Now:HH:mm:ss}",
-                        Body = $"Hi there,\n here's your Name and Secret respectively;\n Name: {name}\n Secret: {randomString} " +
+                        Body = $"Hi there,\n here's your Name and Secret respectively;\n Name: {name}\n Secret: {randomString} Pertinent to " +
+                        $"note that secrets refresh every 1 hour." +
                         $"\n\n\n regards Austin.live.ai.",
                         IsBodyHtml = false
                     };
                     mailMessage.To.Add(recipientEmail);
-                    // Send the email
                     try
                     {
                         smtpClient.Send(mailMessage);
-                        Console.WriteLine($"Email sent successfully to {recipientEmail}");
+                        _logger.LogInformation($"Email sent successfully to {recipientEmail}");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error sending email to {recipientEmail}: {ex.Message}");
+                        _logger.LogError($"Error sending email to {recipientEmail}: {ex.Message}");
+                        throw new Exception(ex.Message);
                     }
                 }
             }
@@ -101,20 +102,34 @@ namespace StaticFileSecureCall.Services
             secretsManagerClient.Dispose();
         }
 
-
         //retrieve from AWS Secret Manager.
-        public void RetrieveKey()
+        public async Task<string> RetrieveKey()
         {
-            //    private const string MySecretName = "MySecret";
-
+            string secretName = "mailpass";
+            string secretValue = string.Empty;
+            using (var secretsManagerClient = new AmazonSecretsManagerClient(RegionEndpoint.USWest2))
+            {
+                var getRequest = new GetSecretValueRequest
+                {
+                    SecretId = secretName
+                };
+                try
+                {
+                    var getResponse = await secretsManagerClient.GetSecretValueAsync(getRequest);
+                    secretValue = getResponse.SecretString;
+                    _logger.LogInformation("Secret successfully retrieved.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error retrieving secret: " + ex.Message);
+                }
+            }
+            return secretValue;
             //private SecretsManagerCache cache = new SecretsManagerCache();
-
             //public async Task<Response> FunctionHandlerAsync(string input, ILambdaContext context)
             //{
             //    string MySecret = await cache.GetSecretString(MySecretName);
-
             //    // Use the secret, return success
-
             //}
         }
     }
