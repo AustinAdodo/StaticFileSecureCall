@@ -21,7 +21,7 @@ namespace StaticFileSecureCall.Services
             _logger = logger;
         }
 
-        private void GenerateKey()
+        private void SendGeneratedKey()
         {
             // Email configuration
             string smtpHost = "smtp.example.com";
@@ -78,7 +78,7 @@ namespace StaticFileSecureCall.Services
         //save to AWS secret Manager.
         public async Task ConfigureKeyAsync()
         {
-            GenerateKey();
+            SendGeneratedKey();
             AWSCredentials credentials = new BasicAWSCredentials(name, randomString);
             AmazonSecretsManagerClient secretsManagerClient = new AmazonSecretsManagerClient(
                 credentials,

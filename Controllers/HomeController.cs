@@ -10,6 +10,8 @@ namespace StaticFileSecureCall.Controllers
     [ApiController]
     public class HomeController : Controller
     {
+        private const string _errorMessage = "Unauthorized access detected, contact admin";
+        private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
         private readonly ILogger<HomeController> _logger;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -44,7 +46,7 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return Forbid(); // 403 Forbidden
+                return Forbid(_errorMessage); // 403 Forbidden
             }
         }
 
@@ -61,7 +63,7 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return Forbid("Unauthorized Request"); // 403 Forbidden
+                return Forbid(_errorMessagekey); // 403 Forbidden
             }
         }
 
