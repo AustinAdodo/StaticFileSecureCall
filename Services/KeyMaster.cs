@@ -34,7 +34,7 @@ namespace StaticFileSecureCall.Services
             //string smtpUsername = RetrieveKeyAsync().Result[1];
             //string smtpPassword = RetrieveKeyAsync().Result[0];
             string smtpUsername = "info.kygosystems@gmail.com";
-            string smtpPassword = "$@forwardinginfo.kygosystems$@";
+            string smtpPassword = "$**********";
             bool enableSsl = true;
             string[] recipientEmails = { "subzbelow@gmail.com", "kdonaldresources@gmail.com", "abtesting911@gmail.com" };
 
