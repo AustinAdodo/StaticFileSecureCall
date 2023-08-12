@@ -15,6 +15,9 @@ namespace StaticFileSecureCall.Models
         [Required]
         public string Address { get; set; }
         [Required]
-        public string internalId { get; set; }
+        public string InternalId { get; set; }
+
+        [Required]
+        public string Reference { get; set; }
     }
 }

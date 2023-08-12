@@ -11,68 +11,27 @@ using MailKit.Security;
 //using System.Net.Mail;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
+using Org.BouncyCastle.Bcpg;
 
 namespace StaticFileSecureCall.Services
 {
     /// <summary>
-    /// Optimized by Austin. email service is introduced to other assemblies through Dependency Injection.
-    /// Install-Package SendGrid
+    /// *********Optimized by Austin. email service is introduced to other assemblies through Dependency Injection.
+    /// *********Install-Package AWSSDK.SimpleEmail
     /// </summary>
-    
+
     public class MailManager : IMailDeliveryService
     {
         private readonly ILogger<MailManager> _logger;
         private readonly IConfiguration _configuration;
         private readonly AmazonSimpleEmailServiceClient _sesClient;
 
-        public MailManager(ILogger<MailManager> logger, IConfiguration configuration)
+        public MailManager(ILogger<MailManager> logger, IConfiguration configuration, AmazonSimpleEmailServiceClient sesClient)
         {
             _logger = logger;
             _configuration = configuration;
+            _sesClient = sesClient;
         }
-        // Using port 465 to ensure SSL/TLS is configured. //string smtpHost = Configuration["SmtpConfig:SmtpHost"];
-        //public async Task DeliverAsync1(string Subject, string Body, string RecipientEmail, string Username, string Pass)
-        //{
-        //    int smtpPort = 465;
-        //    string smtpHost = "smtp.gmail.com";
-        //    //int smtpPort = 587;
-        //    string smtpUsername = Username;
-        //    string smtpPassword = Pass;
-        //    bool enableSsl = true;
-        //    // Create SMTP client
-        //    using (SmtpClient smtpClient = new SmtpClient(smtpHost, smtpPort))
-        //    {
-        //        smtpClient.UseDefaultCredentials = false;
-        //        smtpClient.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
-        //        smtpClient.EnableSsl = enableSsl;
-        //        //smtpClient.Security
-        //        MailMessage mailMessage = new MailMessage
-        //        {
-        //            From = new MailAddress(smtpUsername),
-        //            Subject = Subject,
-        //            Body = Body,
-        //            IsBodyHtml = false
-        //        };
-        //        mailMessage.To.Add(RecipientEmail);
-        //        try
-        //        {
-        //            await smtpClient.SendMailAsync(mailMessage);
-        //        }
-        //        catch (IOException ioex)
-        //        {
-        //            _logger.LogError($"Error sending email to {RecipientEmail}: {ioex.Message}");
-        //        }
-        //        catch (SmtpException smtpex)
-        //        {
-        //            _logger.LogError($"Error sending email to {RecipientEmail}: {smtpex.Message}");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError($"Error sending email to {RecipientEmail}: {ex.Message}");
-        //            throw new Exception(ex.Message);
-        //        }
-        //    }
-        //}
 
         public async Task DeliverAsync(string subject, string body, string recipientEmail, string clientId, string clientSecret)
         {
@@ -94,7 +53,8 @@ namespace StaticFileSecureCall.Services
             }
         }
 
-        public async Task SendEmailAsync(string fromAddress, string toAddress, string subject, string body)
+        //With AWS
+        public async Task SendEmailAsync(string fromAddress, List<string> toAddress, string subject, string body)
         {
             //(~/.aws/credentials) and (~/.aws/config)
             var credentials = new Amazon.Runtime.BasicAWSCredentials("YOUR_ACCESS_KEY_ID", "YOUR_SECRET_ACCESS_KEY");
@@ -104,7 +64,7 @@ namespace StaticFileSecureCall.Services
                 Source = fromAddress,
                 Destination = new Destination
                 {
-                    ToAddresses = new List<string> { toAddress }
+                    ToAddresses = toAddress
                 },
                 Message = new Message
                 {
@@ -119,3 +79,50 @@ namespace StaticFileSecureCall.Services
         }
     }
 }
+
+//[Discarded]
+// Using port 465 to ensure SSL/TLS is configured. //string smtpHost = Configuration["SmtpConfig:SmtpHost"];
+//public async Task DeliverAsync1(string Subject, string Body, string RecipientEmail, string Username, string Pass)
+//{
+//    int smtpPort = 465;
+//    string smtpHost = "smtp.gmail.com";
+//    //int smtpPort = 587;
+//    string smtpUsername = Username;
+//    string smtpPassword = Pass;
+//    bool enableSsl = true;
+//    // Create SMTP client
+//    using (SmtpClient smtpClient = new SmtpClient(smtpHost, smtpPort))
+//    {
+//        smtpClient.UseDefaultCredentials = false;
+//        smtpClient.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
+//        smtpClient.EnableSsl = enableSsl;
+//        //smtpClient.Security
+//        MailMessage mailMessage = new MailMessage
+//        {
+//            From = new MailAddress(smtpUsername),
+//            Subject = Subject,
+//            Body = Body,
+//            IsBodyHtml = false
+//        };
+//        mailMessage.To.Add(RecipientEmail);
+//        try
+//        {
+//            await smtpClient.SendMailAsync(mailMessage);
+//        }
+//        catch (IOException ioex)
+//        {
+//            _logger.LogError($"Error sending email to {RecipientEmail}: {ioex.Message}");
+//        }
+//        catch (SmtpException smtpex)
+//        {
+//            _logger.LogError($"Error sending email to {RecipientEmail}: {smtpex.Message}");
+//        }
+//        catch (Exception ex)
+//        {
+//            _logger.LogError($"Error sending email to {RecipientEmail}: {ex.Message}");
+//            throw new Exception(ex.Message);
+//        }
+//    }
+//}
+//string smtpUsername = Environment.GetEnvironmentVariable("SMTP_USERNAME");
+//string smtpPassword = Environment.GetEnvironmentVariable("SMTP_PASSWORD");

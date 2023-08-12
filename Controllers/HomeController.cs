@@ -11,6 +11,7 @@ namespace StaticFileSecureCall.Controllers
     [ApiController]
     public class HomeController : Controller
     {
+        public const string baseuri = "api";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
@@ -46,8 +47,10 @@ namespace StaticFileSecureCall.Controllers
             if (_authorizedIpAddresses.Contains(formattedIpAddress))
             {
                 // Authorized logic
-                string message = $"use the same API endpoint with secretkey provided to you by admin to activate Download.";
-                _generator.ConfigureKeyAsync();   
+                string message = $"A token has been sent to the admin, kindly request for this token" +
+                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
+                    $"This token will expire in 45 minutes.";
+                _generator.ConfigureKeyAsync();
                 return Ok(message);
             }
             else
