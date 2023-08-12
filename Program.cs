@@ -67,13 +67,13 @@ internal class Program
 
         app.UseHttpsRedirection();
 
-        app.UseRateLimiter();
+        //app.UseRateLimiter();
 
         app.UseAuthorization();
 
         //app.UseEndpoints();
 
-        app.MapControllers().RequireRateLimiting("Caution"); //Rate Limit policy Integrated.
+        app.MapControllers();//.RequireRateLimiting("Caution"); //Rate Limit policy Integrated.
 
         app.Run();
     }
