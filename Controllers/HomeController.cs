@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StaticFileSecureCall.Services;
 using Microsoft.AspNetCore.StaticFiles;
+using System.Net;
 using System.IO;
 
 
@@ -17,10 +18,10 @@ namespace StaticFileSecureCall.Controllers
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IKeyGenerator _generator;
 
-        public HomeController(IConfiguration configuration, IKeyGenerator generator, 
+        public HomeController(IConfiguration configuration, IKeyGenerator generator,
             IHttpContextAccessor contextAccessor, ILogger<HomeController> logger)
         {
-            _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>())?? new string[] {"192.168.1.1" };
+            _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
             _contextAccessor = contextAccessor;
             _logger = logger;
@@ -37,8 +38,12 @@ namespace StaticFileSecureCall.Controllers
         [HttpGet("reqCurrent")]
         public IActionResult ReqCurrent()
         {
-            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            if (_authorizedIpAddresses.Contains(remoteIpAddress))
+            //var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
+            var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+               ? remoteIpAddress.MapToIPv4().ToString()
+               : remoteIpAddress.ToString();
+            if (_authorizedIpAddresses.Contains(formattedIpAddress))
             {
                 // Authorized logic
                 string message = $"use the same API endpoint with secretkey provided to you by admin to activate Download.";
