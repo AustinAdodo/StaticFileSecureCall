@@ -19,8 +19,8 @@ internal class Program
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
-        //Policy Name : Caution.
-        builder.Services.AddRateLimiter(LimitPolicy =>
+        
+        builder.Services.AddRateLimiter(LimitPolicy => //Rate Limiting Policy Name : Caution
         {
             LimitPolicy.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             LimitPolicy.AddFixedWindowLimiter("caution", window => { window.Window = TimeSpan.FromSeconds(1800); window.PermitLimit = 6; });
@@ -28,6 +28,7 @@ internal class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
         builder.Services.AddScoped<IPersistence, PersistenceService>();
+        builder.Services.AddScoped<IMailDeliveryService, MailManager>();
         builder.Services.AddDbContextPool<AppDbContext>(options =>
    options.UseSqlServer(builder.Configuration.GetConnectionString("OtherConnection")));
         builder.Services.AddDbContextPool<AppDbContext>(options =>

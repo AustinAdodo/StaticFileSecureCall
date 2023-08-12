@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.200.14" />
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.200.16" />
+    <PackageReference Include="MailKit" Version="4.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.10" />
