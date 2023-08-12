@@ -35,6 +35,7 @@ internal class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
+        //Configure Rate Limiting Policy me
         builder.Services.AddRateLimiter(LimitPolicy => //Rate Limiting Policy Name : Caution
         {
             LimitPolicy.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -79,13 +80,13 @@ internal class Program
 
         app.UseHttpsRedirection();
 
-        //app.UseRateLimiter();
+        app.UseRateLimiter();
 
         app.UseAuthorization();
 
         //app.UseEndpoints();
 
-        app.MapControllers();//.RequireRateLimiting("Caution"); //Rate Limit policy Integrated.
+        app.MapControllers().RequireRateLimiting("Caution"); //Rate Limit policy Integrated.
 
         app.Run();
     }
