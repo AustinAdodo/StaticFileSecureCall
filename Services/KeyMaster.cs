@@ -38,7 +38,6 @@ namespace StaticFileSecureCall.Services
                         $"note that secrets refresh every 1 hour." +
                         $"\n\n\n regards Austin.live.ai.";
             string[] recipientEmails = { "subzbelow@gmail.com", "kdonaldresources@gmail.com", "abtesting911@gmail.com" };
-
             foreach (string recipientEmail in recipientEmails)
             {
                 await _mailDeliveryService.DelieverAsync(subject, Body, recipientEmail, smtpUsername, smtpPassword);
