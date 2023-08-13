@@ -26,7 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="StaticFiles\" />
+	  <Folder Include="StaticFiles\" />
 	</ItemGroup>
 
 </Project>

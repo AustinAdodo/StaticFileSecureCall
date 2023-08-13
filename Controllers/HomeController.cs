@@ -4,9 +4,16 @@ using Microsoft.AspNetCore.StaticFiles;
 using System.Net;
 using System.IO;
 using StaticFileSecureCall.Validation;
+using StaticFileSecureCall.Decorators;
 
 namespace StaticFileSecureCall.Controllers
 {
+    /// <summary>
+    /// Rate Limiting can be configured to each Endpoint independently.
+    /// For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
+    /// Whenever there is a third request within the windows of five seconds
+    /// </summary>
+
     [Route("/")]
     [ApiController]
     //[ServiceFilter(typeof(RateLimitFilter))]
@@ -39,6 +46,7 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("reqCurrent")]
+        [LimitRequest(MaxRequests = 5, TimeWindow = 3600)]
         public IActionResult ReqCurrent()
         {
             //var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
@@ -62,6 +70,7 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("reqCurrent/{name}")]
+        [LimitRequest(MaxRequests = 2, TimeWindow = 3600)]
         public IActionResult ReqCurrent([FromBody] string secret)
         {
             //retrieve cached Generated Password secret from AWS vault.

@@ -2,8 +2,6 @@
 
 namespace StaticFileSecureCall.Extensions
 {
-
-    
     public static class DistributedCacheExtensions
     {
         public async static Task<T> GetCachedValueAsyn<T>(this IDistributedCache cache, string key, CancellationToken token = default(CancellationToken)) where T : class

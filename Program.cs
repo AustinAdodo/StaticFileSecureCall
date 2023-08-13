@@ -87,8 +87,6 @@ internal class Program
 
         app.UseHttpsRedirection();
 
-        app.UseRateLimiter();
-
         app.UseAuthorization();
 
         //app.UseEndpoints(endpoints =>{ endpoints.MapControllers(); });
