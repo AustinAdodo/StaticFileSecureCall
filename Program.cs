@@ -8,7 +8,8 @@ using StaticFileSecureCall;
 using StaticFileSecureCall.DataManagement;
 using StaticFileSecureCall.Services;
 using System;
- 
+using AspNetCoreRateLimit;
+
 internal class Program
 {
     /// <summary>
@@ -16,7 +17,7 @@ internal class Program
     /// ***********the inheriting middleware to be registered as transient service.
     /// </summary>
     /// <param name="args"></param>
-    
+
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -35,13 +36,18 @@ internal class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        //Configure Rate Limiting Policy me
-        builder.Services.AddRateLimiter(LimitPolicy => //Rate Limiting Policy Name : Caution
-        {
-            LimitPolicy.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            LimitPolicy.AddFixedWindowLimiter("caution", window => { window.Window = TimeSpan.FromSeconds(1800); window.PermitLimit = 6; });
-        });
+        //Configure Rate Limiting Policy and  rate limiting options
+        builder.Services.AddOptions();
+        builder.Services.AddMemoryCache();
+        builder.Services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
+        builder.Services.Configure<IpRateLimitPolicies>(configuration.GetSection("IpRateLimitPolicies"));
+        builder.Services.AddInMemoryRateLimiting();
+        builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+        builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+        //Add Swagger and other Services to Pipeline.
         builder.Services.AddSwaggerGen();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
         builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
         builder.Services.AddScoped<IPersistence, PersistenceService>();
         builder.Services.AddScoped<IMailDeliveryService, MailManager>();
@@ -54,7 +60,8 @@ internal class Program
         // Configure AWS services
         builder.Services.AddDefaultAWSOptions(configuration.GetAWSOptions());
         builder.Services.AddAWSService<IAmazonSimpleEmailService>();
-       
+
+        // Configure json Web Tokens
         //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         //.AddJwtBearer(options =>
         //{
@@ -84,10 +91,23 @@ internal class Program
 
         app.UseAuthorization();
 
-        //app.UseEndpoints();
+        //app.UseEndpoints(endpoints =>{ endpoints.MapControllers(); });
 
-        app.MapControllers().RequireRateLimiting("Caution"); //Rate Limit policy Integrated.
+        app.MapControllers();
+
+        app.MapControllers();
 
         app.Run();
     }
 }
+
+
+
+//[In Consideration]
+//services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+// ...
+        //builder.Services.AddRateLimiter(LimitPolicy => //Rate Limiting Policy Name : Caution
+        //{
+        //    LimitPolicy.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        //    LimitPolicy.AddFixedWindowLimiter("caution", window => { window.Window = TimeSpan.FromSeconds(1800); window.PermitLimit = 6; });
+        //});

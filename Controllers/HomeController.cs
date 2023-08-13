@@ -3,12 +3,13 @@ using StaticFileSecureCall.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using System.Net;
 using System.IO;
-
+using StaticFileSecureCall.Validation;
 
 namespace StaticFileSecureCall.Controllers
 {
     [Route("/")]
     [ApiController]
+    [ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
         public const string baseuri = "api";

@@ -8,7 +8,6 @@ using System.Security.Authentication;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using MailKit.Security;
-//using System.Net.Mail;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using Org.BouncyCastle.Bcpg;
@@ -24,15 +23,16 @@ namespace StaticFileSecureCall.Services
     {
         private readonly ILogger<MailManager> _logger;
         private readonly IConfiguration _configuration;
-        private readonly AmazonSimpleEmailServiceClient _sesClient;
+        private readonly IAmazonSimpleEmailService _sesClient;
 
-        public MailManager(ILogger<MailManager> logger, IConfiguration configuration, AmazonSimpleEmailServiceClient sesClient)
+        public MailManager(ILogger<MailManager> logger, IConfiguration configuration,IAmazonSimpleEmailService sesClient)
         {
             _logger = logger;
             _configuration = configuration;
             _sesClient = sesClient;
         }
 
+        //[Deprecated]
         public async Task DeliverAsync(string subject, string body, string recipientEmail, string clientId, string clientSecret)
         {
             string refreshToken = string.Empty;
