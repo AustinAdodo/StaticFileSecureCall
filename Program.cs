@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Amazon.Extensions.NETCore.Setup;
 using Amazon.SimpleEmail;
@@ -47,6 +46,7 @@ internal class Program
         //Add Swagger and other Services to Pipeline.
         builder.Services.AddSwaggerGen();
         builder.Services.AddMemoryCache();
+        builder.Services.AddDistributedMemoryCache(); // Cache to handle rate limiting when app becomes large use Redis.
         builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
         builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
         builder.Services.AddScoped<IPersistence, PersistenceService>();

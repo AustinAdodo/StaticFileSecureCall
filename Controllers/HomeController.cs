@@ -9,7 +9,7 @@ namespace StaticFileSecureCall.Controllers
 {
     [Route("/")]
     [ApiController]
-    [ServiceFilter(typeof(RateLimitFilter))]
+    //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
         public const string baseuri = "api";
@@ -30,6 +30,7 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("status")]
+        [LimitRequest(MaxRequests = 5, TimeWindow = 5)]
         public IActionResult Index()
         {
             string message = $"Api works fine and is ready to go! :)";
