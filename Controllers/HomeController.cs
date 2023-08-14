@@ -7,6 +7,7 @@ using StaticFileSecureCall.Validation;
 using StaticFileSecureCall.Decorators;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using StaticFileSecureCall.Models;
+using System.Reflection.Metadata.Ecma335;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -29,8 +30,9 @@ namespace StaticFileSecureCall.Controllers
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IKeyGenerator _generator;
         private readonly IPersistence _persistenceService;
+        private readonly IMailDeliveryService _emailService;
 
-        public HomeController(IConfiguration configuration, IKeyGenerator generator,
+        public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
             IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
@@ -38,6 +40,7 @@ namespace StaticFileSecureCall.Controllers
             _contextAccessor = contextAccessor;
             _logger = logger;
             _persistenceService = persistenceService;
+            _emailService = emailService;
         }
 
         [HttpGet("status")]
@@ -85,9 +88,13 @@ namespace StaticFileSecureCall.Controllers
                 string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
                 string filename = result.Filename; //dummy
                 var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var Details = new MailDeliveryConfirmationContentModel()
+                {
+                    Filename = filename,
+                };
                 if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
                 {
-                    return RedirectToAction("Download", new { name = filename });
+                    return RedirectToAction("Download", new { name = filename, DeliveryDetails = Details });
                 }
                 else
                 {
@@ -103,18 +110,17 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        [HttpGet("{fileName}")]
-        private IActionResult Download(string fileName)
+        //[HttpGet("{fileName}")]
+        private IActionResult Download(string fileName, MailDeliveryConfirmationContentModel details)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
             if (!System.IO.File.Exists(filePath)) return NotFound("The file pathname or directory could not be located");
             var memory = new MemoryStream();
-            using (var stream = new FileStream(filePath, FileMode.Open))
-            {
-                stream.CopyTo(memory);
-            }
+            using (var stream = new FileStream(filePath, FileMode.Open)) stream.CopyTo(memory);
             memory.Position = 0;
-            return File(memory, GetContentType(filePath), Path.GetFileName(filePath));
+            var result = File(memory, GetContentType(filePath), Path.GetFileName(filePath));
+            _emailService.SendConfirmationEmailAsync(details);//ownload is successfull
+            return result;
         }
 
         private string GetContentType(string path)
