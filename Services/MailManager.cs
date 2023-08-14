@@ -17,6 +17,7 @@ namespace StaticFileSecureCall.Services
     /// <summary>
     /// *********Optimized by Austin. email service is introduced to other assemblies through Dependency Injection.
     /// *********Install-Package AWSSDK.SimpleEmail
+    /// *********AWS SES was configured with MailManager.
     /// </summary>
 
     public class MailManager : IMailDeliveryService

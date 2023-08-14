@@ -30,7 +30,7 @@ namespace StaticFileSecureCall.DataManagement
         }
 
         ///dbsets
-        public DbSet<FileRepository> Events { get; set; }
+        public DbSet<FileRepository> FileRepositories { get; set; }
         //public DbSet<Participant> Participants { get; set; }
     }
 }

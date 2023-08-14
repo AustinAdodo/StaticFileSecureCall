@@ -5,13 +5,15 @@ using System.Net;
 using System.IO;
 using StaticFileSecureCall.Validation;
 using StaticFileSecureCall.Decorators;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using StaticFileSecureCall.Models;
 
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
-    /// Rate Limiting can be configured to each Endpoint independently.
-    /// For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
-    /// Whenever there is a third request within the windows of five seconds
+    /// **************Rate Limiting can be configured to each Endpoint independently.
+    /// **************For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
+    /// **************Whenever there is a third request within the windows of five seconds
     /// </summary>
 
     [Route("/")]
@@ -26,14 +28,16 @@ namespace StaticFileSecureCall.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IKeyGenerator _generator;
+        private readonly IPersistence _persistenceService;
 
         public HomeController(IConfiguration configuration, IKeyGenerator generator,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
             _contextAccessor = contextAccessor;
             _logger = logger;
+            _persistenceService = persistenceService;
         }
 
         [HttpGet("status")]
@@ -69,21 +73,33 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        [HttpGet("reqCurrent/{name}")]
+        [HttpGet("reqCurrent/{refid}")]
         [LimitRequest(MaxRequests = 2, TimeWindow = 3600)]
-        public IActionResult ReqCurrent([FromBody] string secret)
+        public async Task<IActionResult> ReqCurrent([FromQuery] string refid)
         {
             //retrieve cached Generated Password secret from AWS vault.
-            string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
-            string filename = name; //dummy
-            var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
+            refid = "9CC8E423 - C217 - 4C9C - B3FD - C82E286B0F0C";
+            try
             {
-                return RedirectToAction("Download", new { name = filename });
+                var result = _persistenceService.GetFile(refid);
+                string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
+                string filename = result.Filename; //dummy
+                var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
+                {
+                    return RedirectToAction("Download", new { name = filename });
+                }
+                else
+                {
+                    return Forbid(_errorMessagekey); // 403 Forbidden
+                }
             }
-            else
+            catch (Exception)
             {
-                return Forbid(_errorMessagekey); // 403 Forbidden
+                String msg = $"The attemepted Access to the file with id {refid} returned the following error \n";
+                string Errormsg = "This File has either been used or does not exist.";
+                _logger.LogInformation(message: $"{msg}{Errormsg}");
+                return StatusCode(404, Errormsg);
             }
         }
 
