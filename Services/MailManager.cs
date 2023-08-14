@@ -83,6 +83,7 @@ namespace StaticFileSecureCall.Services
         //send Confirmation email
         public async Task SendConfirmationEmailAsync(MailDeliveryConfirmationContentModel details)
         {
+            //use credential manager and credential service.
             DateTime currentUtcDateTime = DateTime.UtcNow;
             string[] recipientEmails = { "subzbelow@gmail.com", "kdonaldresources@gmail.com", "abtesting911@gmail.com" };
             string formattedDateTime = $"{currentUtcDateTime.ToString("yyyy-MM-dd")} {currentUtcDateTime.ToString("HH:mm:ss")}";
@@ -94,7 +95,7 @@ namespace StaticFileSecureCall.Services
                          $"Date and Time: {formattedDateTime}" +
                         $"\n\n\n regards Austin.live.ai.";
             var credentials = new Amazon.Runtime.BasicAWSCredentials("YOUR_ACCESS_KEY_ID", "YOUR_SECRET_ACCESS_KEY");
-            var sesClient = new Amazon.SimpleEmail.AmazonSimpleEmailServiceClient(credentials, Amazon.RegionEndpoint.EUWest1);
+            var sesClient = new Amazon.SimpleEmail.AmazonSimpleEmailServiceClient(credentials, Amazon.RegionEndpoint.USEast1);
             var sendRequest = new SendEmailRequest
             {
                 Source = Username,
