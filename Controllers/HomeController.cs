@@ -41,7 +41,7 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("status")]
-        [LimitRequest(MaxRequests = 5, TimeWindow = 5)]
+        [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
         {
             string message = $"Api works fine and is ready to go! :)";
@@ -74,7 +74,7 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("reqCurrent/{refid}")]
-        [LimitRequest(MaxRequests = 2, TimeWindow = 3600)]
+        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
         public async Task<IActionResult> ReqCurrent([FromQuery] string refid)
         {
             //retrieve cached Generated Password secret from AWS vault.

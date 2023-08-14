@@ -76,8 +76,8 @@ internal class Program
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
-        //builder.Services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
-        //builder.Services.Configure<IpRateLimitPolicies>(configuration.GetSection("IpRateLimitPolicies"));
+        builder.Services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
+        builder.Services.Configure<IpRateLimitPolicies>(configuration.GetSection("IpRateLimitPolicies"));
         builder.Services.AddInMemoryRateLimiting();
         builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
