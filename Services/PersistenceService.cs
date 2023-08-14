@@ -1,22 +1,32 @@
-﻿using StaticFileSecureCall.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using StaticFileSecureCall.DataManagement;
+using StaticFileSecureCall.Models;
 
 namespace StaticFileSecureCall.Services
 {
     public class PersistenceService : IPersistence
     {
+        private readonly ILogger<PersistenceService> _logger;
+        private readonly AppDbContext _appContext;
+        public PersistenceService(AppDbContext appContext, ILogger<PersistenceService> logger)
+        {
+            _appContext = appContext;
+            _logger = logger;
+        }
         public void DeleteFileAsync(string internalId)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<FileRepository>> GetAllFilesAsync()
+        public async Task<List<FileRepository>> GetAllFilesAsync()
         {
-            throw new NotImplementedException();
+            return await _appContext.FileRepositories.ToListAsync();
         }
 
-        public Task<FileRepository> GetFileAsync(string internalId)
+        public FileRepository GetFile(string internalId)
         {
-            throw new NotImplementedException();
+            var File = GetAllFilesAsync().Result.Where(a => a.InternalId == internalId).First();
+            return File;
         }
 
         public void SaveFileAsync()
