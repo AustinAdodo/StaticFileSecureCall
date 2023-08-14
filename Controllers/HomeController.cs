@@ -119,7 +119,7 @@ namespace StaticFileSecureCall.Controllers
             using (var stream = new FileStream(filePath, FileMode.Open)) stream.CopyTo(memory);
             memory.Position = 0;
             var result = File(memory, GetContentType(filePath), Path.GetFileName(filePath));
-            _emailService.SendConfirmationEmailAsync(details);//ownload is successfull
+            _emailService.SendConfirmationEmailAsync(details);//download is successfull.
             return result;
         }
 

@@ -56,7 +56,7 @@ internal class Program
         var secretObject = JsonSerializer.Deserialize<Dictionary<string, string>>(secret);
         var password = secretObject["password"];
         // Update the connection string in IConfiguration
-        configuration["ConnectionStrings:FileConnection"] = configuration["ConnectionStrings:FileConnection"]?.Replace("__PASSWORD__", password);
+        //configuration["ConnectionStrings:FileConnection"] = configuration["ConnectionStrings:FileConnection"]?.Replace("__PASSWORD__", password);
         }
         catch (AmazonSecretsManagerException ex)
         {
