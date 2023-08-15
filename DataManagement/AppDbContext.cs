@@ -8,7 +8,9 @@ using Microsoft.Extensions.Logging;
 
 namespace StaticFileSecureCall.DataManagement
 {
-    //Object layer Management.
+    /// <summary>
+    /// ***********Object layer Management.
+    /// </summary>
     public class AppDbContext : IdentityDbContext
     {
         //Private readonly IUserResolver
@@ -16,20 +18,8 @@ namespace StaticFileSecureCall.DataManagement
             : base(options)
         {
         }
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-        }
-        public void AddCascadingObject(object RootEntity)
-        {
-            ChangeTracker.TrackGraph(
-                RootEntity,
-                node => node.Entry.State = !node.Entry.IsKeySet ? EntityState.Added : EntityState.Unchanged
-                );
-        }
 
         ///dbsets
         public DbSet<FileRepository> FileRepositories { get; set; }
-        //public DbSet<Participant> Participants { get; set; }
     }
 }

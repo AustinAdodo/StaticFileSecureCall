@@ -31,20 +31,27 @@ internal class Program
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        //for Development environment.
-        string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.Trim('"');
-        var connectionString = builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
 
         //setup configuration and Environment
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true, reloadOnChange: true)
-            .AddEnvironmentVariables() // <--environment variables added.
+            .AddEnvironmentVariables()
             .Build();
-        var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>(); //register authorized Ip addreses
+        var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        string connectionString = string.Empty;
+        if (CurrentEnvironment == Environments.Development)
+        {
+        var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
+        string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.Trim('"');
+        var devConnection= builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
+        if (devConnection != null) connectionString = devConnection;
+        }
 
         //AWS Configurations options.
+        if (CurrentEnvironment == Environments.Production)
+        {
         try
         {
             var awsOptions = configuration.GetAWSOptions();
@@ -69,6 +76,7 @@ internal class Program
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred: {ex.Message}");
+        }
         }
 
         // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -97,7 +105,7 @@ internal class Program
             });
         });
         builder.Services.AddMemoryCache();
-        builder.Services.AddDistributedMemoryCache(); //
+        builder.Services.AddDistributedMemoryCache(); 
         builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
         builder.Services.AddScoped<ICredentialService, CredentialManager>();
         builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
@@ -106,7 +114,7 @@ internal class Program
         builder.Services.AddDbContextPool<AppDbContext>(options =>
    options.UseSqlServer(builder.Configuration.GetConnectionString(connectionString)));
         builder.Services.AddDbContextPool<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect("OtherConnection"))); //autodetect version
+    options.UseMySql(connectionString, ServerVersion.AutoDetect("OtherConnection")));
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddLogging();
 
@@ -123,13 +131,13 @@ internal class Program
             app.UseDeveloperExceptionPage();
         }
 
-        app.UseMiddleware<IpAuthorizationMiddleware>();//custom Middleware registered.
+        app.UseMiddleware<IpAuthorizationMiddleware>();
 
         app.UseCors();
 
         app.UseRouting();
 
-        app.UseStaticFiles(); //static files included.
+        app.UseStaticFiles();
 
         app.UseHttpsRedirection();
 
