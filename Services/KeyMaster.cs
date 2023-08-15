@@ -21,12 +21,14 @@ namespace StaticFileSecureCall.Services
         private readonly IMailDeliveryService _mailDeliveryService;
         private readonly string name;
         private readonly ILogger<KeyMaster> _logger;
-        public KeyMaster(ILogger<KeyMaster> logger, IMailDeliveryService mailDeliveryService)
+        private readonly ICredentialService _credentialService;
+        public KeyMaster(ILogger<KeyMaster> logger, IMailDeliveryService mailDeliveryService, ICredentialService credentialService = null)
         {
             randomString = GenerateRandomString();
             name = $"request{DateTime.Now:HH:mm:ss}";
             _logger = logger;
             _mailDeliveryService = mailDeliveryService;
+            _credentialService = credentialService;
         }
 
         //email delivery.
@@ -57,24 +59,9 @@ namespace StaticFileSecureCall.Services
         public async Task ConfigureKeyAsync()
         {
             await SendGeneratedKey();
-            AWSCredentials credentials = new BasicAWSCredentials(name, randomString);
-            AmazonSecretsManagerClient secretsManagerClient = new AmazonSecretsManagerClient(
-                credentials,
-                RegionEndpoint.EUWest1 // Determine the best region discussing with Tunde.
-            );
             string secretName = name;
             string secretValue = randomString;
-            var request = new PutSecretValueRequest
-            {
-                SecretId = secretName,
-                SecretString = secretValue
-            };
-            PutSecretValueResponse response = await secretsManagerClient.PutSecretValueAsync(request);
-            if (response.HttpStatusCode == HttpStatusCode.OK) // Check if the response indicates success
-            {
-                _logger.LogInformation("Secret successfully deployed from KeyGen to AWS");
-            }
-            secretsManagerClient.Dispose();
+            await _credentialService.ExportCredentialAsync(secretName, secretValue);    
         }
 
         //retrieve from AWS Secret Manager.
@@ -82,33 +69,10 @@ namespace StaticFileSecureCall.Services
         {
             string secretName = "mailpass";
             string secretEmail = "mailname";
-            using (var secretsManagerClient = new AmazonSecretsManagerClient(Amazon.RegionEndpoint.USWest2))
-            {
-                var getRequest = new GetSecretValueRequest
-                {
-                    SecretId = secretName
-                };
-                var getRequest1 = new GetSecretValueRequest
-                {
-                    SecretId = secretEmail
-                };
-                try
-                {
-                    var getResponse = await secretsManagerClient.GetSecretValueAsync(getRequest);
-                    var getResponse1 = await secretsManagerClient.GetSecretValueAsync(getRequest1);
-                    string[] secretValue = new string[2];
-                    secretValue[0] = getResponse.SecretString;
-                    secretValue[1] = getResponse1.SecretString;
-                    _logger.LogInformation("Secrets successfully retrieved.");
-                    return secretValue;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("Error retrieving secrets: " + ex.Message);
-                    throw;
-                }
+            string result1 = await _credentialService.ImportCredentialAsync(secretName);
+            string result2  = await _credentialService.ImportCredentialAsync(secretEmail);
+            return new string[] { result1, result2 };   
             }
-        }
     }
 }
 //private SecretsManagerCache cache = new SecretsManagerCache();

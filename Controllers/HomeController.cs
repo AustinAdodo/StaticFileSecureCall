@@ -78,13 +78,23 @@ namespace StaticFileSecureCall.Controllers
 
         [HttpGet("reqCurrent/{refid}")]
         [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
-        public async Task<IActionResult> ReqCurrent([FromQuery] string refid)
+        public async Task<IActionResult> ProceedToDownload()
         {
             //retrieve cached Generated Password secret from AWS vault.
+            string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
+            FileRepository result = new FileRepository();
             refid = "9CC8E423 - C217 - 4C9C - B3FD - C82E286B0F0C";
             try
             {
-                var result = _persistenceService.GetFile(refid);
+                result = _persistenceService.GetFile(refid);
+            }
+            catch (Exception ex)
+            {
+                string Errormsg = $"Error Retrieving From database {ex.Message}";
+                _logger.LogInformation(message: $"{Errormsg}");
+            }
+            try
+            {
                 string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
                 string filename = result.Filename; //dummy
                 var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
