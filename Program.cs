@@ -34,13 +34,13 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
 
         //setup configuration and Environment
+        var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{CurrentEnvironment}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
-        var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         string connectionString = string.Empty;
         if (CurrentEnvironment == Environments.Development)
         {
