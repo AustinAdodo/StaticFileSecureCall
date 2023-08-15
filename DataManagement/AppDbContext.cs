@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using StaticFileSecureCall.Models;
 using Microsoft.Extensions.Logging;
-//using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace StaticFileSecureCall.DataManagement
 {

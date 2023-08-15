@@ -97,7 +97,7 @@ namespace StaticFileSecureCall.Controllers
 
         [HttpGet("reqCurrent/{refid}")]
         //[LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
-        public async Task<IActionResult> ProceedToDownload()
+        public IActionResult ProceedToDownload()
         {
             //retrieve cached Generated Password secret from AWS vault.
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
@@ -116,14 +116,14 @@ namespace StaticFileSecureCall.Controllers
             {
                 string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
                 string filename = result.Filename; //dummy
-                var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                var Details = new MailDeliveryConfirmationContentModel()
+                var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+                string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+              ? remoteIpAddress.MapToIPv4().ToString()
+              : remoteIpAddress.ToString();
+                if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
                 {
-                    Filename = filename,
-                };
-                if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
-                {
-                    return RedirectToAction("Download", new { name = filename, DeliveryDetails = Details });
+                    Download();
+                    return Ok("Download Initiated");
                 }
                 else
                 {
@@ -139,16 +139,20 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        //[HttpGet("{fileName}")]
-        private IActionResult Download(string fileName, MailDeliveryConfirmationContentModel details)
+        private IActionResult Download()
         {
+            string fileName = HttpContext.Request.Query["fileName"].ToString();
+            var Details = new MailDeliveryConfirmationContentModel()
+            {
+                Filename = fileName,
+            };
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
             if (!System.IO.File.Exists(filePath)) return NotFound("The file pathname or directory could not be located");
             var memory = new MemoryStream();
             using (var stream = new FileStream(filePath, FileMode.Open)) stream.CopyTo(memory);
             memory.Position = 0;
             var result = File(memory, GetContentType(filePath), Path.GetFileName(filePath));
-            _emailService.SendConfirmationEmailAsync(details);//download is successfull.
+            _emailService.SendConfirmationEmailAsync(Details);//download is successfull.
             return result;
         }
 

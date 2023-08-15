@@ -33,8 +33,7 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
         //for Development environment.
         string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.Trim('"');
-        string ? connectionString = builder.Configuration.GetConnectionString("FileConnection")?
-               .Replace("__DB_PASSWORD__", dbPassword) ?? throw new ArgumentNullException("connection string cannot be empty");
+        var connectionString = builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
 
         //setup configuration and Environment
         IConfiguration configuration = new ConfigurationBuilder()
@@ -88,6 +87,15 @@ internal class Program
 
         //Add Swagger and other Services to Pipeline.
         builder.Services.AddSwaggerGen();
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            });
+        });
         builder.Services.AddMemoryCache();
         builder.Services.AddDistributedMemoryCache(); //
         builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
@@ -117,6 +125,8 @@ internal class Program
 
         app.UseMiddleware<IpAuthorizationMiddleware>();//custom Middleware registered.
 
+        app.UseCors();
+
         app.UseRouting();
 
         app.UseStaticFiles(); //static files included.
@@ -134,6 +144,7 @@ internal class Program
         app.Run();
     }
 }
+
 
 
 
