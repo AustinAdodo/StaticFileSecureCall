@@ -20,7 +20,8 @@ namespace StaticFileSecureCall.Services
 
         public async Task<List<FileRepository>> GetAllFilesAsync()
         {
-            return await _appContext.FileRepositories.ToListAsync();
+            var all = await _appContext.FileRepositories.ToListAsync();
+            return all;
         }
 
         public FileRepository GetFile(string internalId)

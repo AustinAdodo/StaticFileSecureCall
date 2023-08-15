@@ -8,6 +8,13 @@ using StaticFileSecureCall.Decorators;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using StaticFileSecureCall.Models;
 using System.Reflection.Metadata.Ecma335;
+using Azure;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
+using static System.Net.Mime.MediaTypeNames;
+using System.Diagnostics.Contracts;
+using System.Net.Sockets;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -31,9 +38,10 @@ namespace StaticFileSecureCall.Controllers
         private readonly IKeyGenerator _generator;
         private readonly IPersistence _persistenceService;
         private readonly IMailDeliveryService _emailService;
+        private IWebHostEnvironment _webHostEnvironment;
 
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
@@ -41,6 +49,7 @@ namespace StaticFileSecureCall.Controllers
             _logger = logger;
             _persistenceService = persistenceService;
             _emailService = emailService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet("status")]
@@ -50,6 +59,25 @@ namespace StaticFileSecureCall.Controllers
             string message = $"Api works fine and is ready to go! :)";
             _logger.LogInformation("Success health check initiated successfully");
             return Ok(message);
+        }
+
+        [HttpGet("confirmAccess")]
+        [LimitRequest(MaxRequests = 3, TimeWindow = 10)]
+        public IActionResult Accessibility()
+        {
+            var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+               ? remoteIpAddress.MapToIPv4().ToString()
+               : remoteIpAddress.ToString();
+            if (_authorizedIpAddresses.Contains(formattedIpAddress))
+            {
+                string message = $"You're in, you can proceed.";
+                return Ok(message);
+            }
+            else
+            {
+                return StatusCode(404,$"{_errorMessage} contact admin to register IP address.");
+            }
         }
 
         [HttpGet("reqCurrent")]
@@ -77,24 +105,35 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("reqCurrent/{refid}")]
-        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
-        public async Task<IActionResult> ReqCurrent([FromQuery] string refid)
+        //[LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        public IActionResult ProceedToDownload()
         {
             //retrieve cached Generated Password secret from AWS vault.
-            refid = "9CC8E423 - C217 - 4C9C - B3FD - C82E286B0F0C";
+            string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
+            FileRepository result = new FileRepository();
+            refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
             try
             {
-                var result = _persistenceService.GetFile(refid);
+                var all = _persistenceService.GetAllFilesAsync().Result;
+                result = all.Where(a => a.InternalId == refid).First();
+            }
+            catch (Exception ex)
+            {
+                string Errormsg = $"Error Retrieving From database {ex.Message}";
+                _logger.LogInformation(message: $"{Errormsg}");
+            }
+            try
+            {
                 string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
                 string filename = result.Filename; //dummy
-                var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                var Details = new MailDeliveryConfirmationContentModel()
+                var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+                string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+              ? remoteIpAddress.MapToIPv4().ToString()
+              : remoteIpAddress.ToString();
+                if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
                 {
-                    Filename = filename,
-                };
-                if (_authorizedIpAddresses.Contains(remoteIpAddress)) // and name and secret matches.
-                {
-                    return RedirectToAction("Download", new { name = filename, DeliveryDetails = Details });
+                    Download(filename);
+                    return Ok("Download Initiated");
                 }
                 else
                 {
@@ -110,19 +149,36 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        //[HttpGet("{fileName}")]
-        private IActionResult Download(string fileName, MailDeliveryConfirmationContentModel details)
+        private IActionResult Download(string fileName)
         {
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
-            if (!System.IO.File.Exists(filePath)) return NotFound("The file pathname or directory could not be located");
-            var memory = new MemoryStream();
-            using (var stream = new FileStream(filePath, FileMode.Open)) stream.CopyTo(memory);
-            memory.Position = 0;
-            var result = File(memory, GetContentType(filePath), Path.GetFileName(filePath));
-            _emailService.SendConfirmationEmailAsync(details);//download is successfull.
-            return result;
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "StaticFiles", fileName);
+            bool condition = System.IO.File.Exists(filePath.Trim());
+            if (condition)
+            {
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                {
+                    stream.CopyTo(memory);
+                }
+                memory.Position = 0;
+                var contentType = GetContentType(fileName);
+                // Serve the file for download
+                var result = File(memory, contentType, Path.GetFileName(filePath));
+                // Send the confirmation email
+                var details = new MailDeliveryConfirmationContentModel
+                {
+                    Filename = fileName
+                };
+                _emailService.SendConfirmationEmailAsync(details);
+                return result;
+            }
+            else
+            {
+                return NotFound("The File you're attempting to download couldn't be located or isn't 'Switched On'");
+            }
         }
 
+        //Resolve File Content Type.
         private string GetContentType(string path)
         {
             var provider = new FileExtensionContentTypeProvider();
