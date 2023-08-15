@@ -36,13 +36,12 @@ internal class Program
         string ? connectionString = builder.Configuration.GetConnectionString("FileConnection")?
                .Replace("__DB_PASSWORD__", dbPassword) ?? throw new ArgumentNullException("connection string cannot be empty");
 
-
         //setup configuration and Environment
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true, reloadOnChange: true)
-            .AddEnvironmentVariables() //environment variables added.
+            .AddEnvironmentVariables() // <--environment variables added.
             .Build();
         var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>(); //register authorized Ip addreses
 
@@ -73,8 +72,7 @@ internal class Program
             Console.WriteLine($"An error occurred: {ex.Message}");
         }
 
-        // Add services to the container.
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
@@ -121,7 +119,7 @@ internal class Program
 
         app.UseRouting();
 
-        app.UseStaticFiles();//static files included.
+        app.UseStaticFiles(); //static files included.
 
         app.UseHttpsRedirection();
 

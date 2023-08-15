@@ -52,6 +52,25 @@ namespace StaticFileSecureCall.Controllers
             return Ok(message);
         }
 
+        [HttpGet("confirmAccess")]
+        [LimitRequest(MaxRequests = 3, TimeWindow = 10)]
+        public IActionResult Accessibility()
+        {
+            var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+               ? remoteIpAddress.MapToIPv4().ToString()
+               : remoteIpAddress.ToString();
+            if (_authorizedIpAddresses.Contains(formattedIpAddress))
+            {
+                string message = $"You're in, you can proceed.";
+                return Ok(message);
+            }
+            else
+            {
+                return StatusCode(404,$"{_errorMessage} contact admin to register IP address.");
+            }
+        }
+
         [HttpGet("reqCurrent")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 3600)]
         public IActionResult ReqCurrent()
@@ -77,13 +96,13 @@ namespace StaticFileSecureCall.Controllers
         }
 
         [HttpGet("reqCurrent/{refid}")]
-        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        //[LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
         public async Task<IActionResult> ProceedToDownload()
         {
             //retrieve cached Generated Password secret from AWS vault.
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
-            refid = "9CC8E423 - C217 - 4C9C - B3FD - C82E286B0F0C";
+            refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
             try
             {
                 result = _persistenceService.GetFile(refid);
