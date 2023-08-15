@@ -152,7 +152,8 @@ namespace StaticFileSecureCall.Controllers
         private IActionResult Download(string fileName)
         {
             var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "StaticFiles", fileName);
-            if (System.IO.File.Exists(filePath))
+            bool condition = System.IO.File.Exists(filePath.Trim());
+            if (condition)
             {
                 var memory = new MemoryStream();
                 using (var stream = new FileStream(filePath, FileMode.Open))
@@ -177,6 +178,7 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
+        //Resolve File Content Type.
         private string GetContentType(string path)
         {
             var provider = new FileExtensionContentTypeProvider();
