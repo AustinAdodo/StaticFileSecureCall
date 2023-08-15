@@ -44,7 +44,7 @@ internal class Program
         if (CurrentEnvironment == Environments.Development)
         {
         var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-        string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.Trim('"');
+            string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();//.Trim('"')
         var devConnection= builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
         if (devConnection != null) connectionString = devConnection;
         }
@@ -112,7 +112,7 @@ internal class Program
         builder.Services.AddScoped<IPersistence, PersistenceService>();
         builder.Services.AddScoped<IMailDeliveryService, MailManager>();
         builder.Services.AddDbContextPool<AppDbContext>(options =>
-   options.UseSqlServer(builder.Configuration.GetConnectionString(connectionString)));
+   options.UseSqlServer(connectionString));
         builder.Services.AddDbContextPool<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect("OtherConnection")));
         builder.Services.AddHttpContextAccessor();

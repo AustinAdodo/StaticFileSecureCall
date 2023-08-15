@@ -105,7 +105,11 @@ namespace StaticFileSecureCall.Controllers
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
             try
             {
-                result = _persistenceService.GetFile(refid);
+                var all = _persistenceService.GetAllFilesAsync().Result;
+                foreach (var file in all) { 
+                Console.WriteLine(file);    
+                }
+                result = all.Where(a => a.InternalId == refid).First();
             }
             catch (Exception ex)
             {
@@ -122,7 +126,7 @@ namespace StaticFileSecureCall.Controllers
               : remoteIpAddress.ToString();
                 if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
                 {
-                    Download();
+                    Download(filename);
                     return Ok("Download Initiated");
                 }
                 else
@@ -139,9 +143,8 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        private IActionResult Download()
+        private IActionResult Download(string fileName)
         {
-            string fileName = HttpContext.Request.Query["fileName"].ToString();
             var Details = new MailDeliveryConfirmationContentModel()
             {
                 Filename = fileName,
