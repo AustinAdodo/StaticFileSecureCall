@@ -25,6 +25,7 @@ internal class Program
     /// ***********NB:IMiddleware Interface was not implmented because that will require 
     /// ***********the inheriting middleware to be registered as transient service.
     /// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
+    /// ************ static file Middleware must be placed before app.UserRouting().
     /// </summary>
     /// <param name="args"></param>
 
@@ -43,40 +44,41 @@ internal class Program
         string connectionString = string.Empty;
         if (CurrentEnvironment == Environments.Development)
         {
-        var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-            string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();//.Trim('"')
-        var devConnection= builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
-        if (devConnection != null) connectionString = devConnection;
+            var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
+            string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();
+            var devConnection = builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
+            if (devConnection != null) connectionString = devConnection;
         }
 
         //AWS Configurations options.
         if (CurrentEnvironment == Environments.Production)
         {
-        try
-        {
-            var awsOptions = configuration.GetAWSOptions();
-            using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);
-            var secretName = "my-secret-name";
-            var request = new GetSecretValueRequest
+            try
             {
-                SecretId = secretName
-            };
-            var response = await secretsManagerClient.GetSecretValueAsync(request);
-            if (response.SecretString == null) throw new Exception("Secret string is empty or null.");
-            var secret = response.SecretString; ///
-            var secretObject = JsonSerializer.Deserialize<Dictionary<string, string>>(secret);
-            var password = secretObject["password"];
-            // Update the connection string in IConfiguration
-            //configuration["ConnectionStrings:FileConnection"] = configuration["ConnectionStrings:FileConnection"]?.Replace("__PASSWORD__", password);
-        }
-        catch (AmazonSecretsManagerException ex)
-        {
-            Console.WriteLine($"AWS Secrets Manager exception: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-        }
+                var awsOptions = configuration.GetAWSOptions();
+                using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);
+                var secretName = "my-secret-name";
+                var request = new GetSecretValueRequest
+                {
+                    SecretId = secretName
+                };
+                var response = await secretsManagerClient.GetSecretValueAsync(request);
+                if (response.SecretString == null) throw new Exception("Secret string is empty or null.");
+                var secret = response.SecretString; ///
+                var secretObject = JsonSerializer.Deserialize<Dictionary<string, string>>(secret);
+                var password = secretObject["password"];
+                //Update the connection string in IConfiguration
+                configuration["ConnectionStrings:FileConnection"] = configuration["ConnectionStrings:FileConnection"]?.Replace("__PASSWORD__", password);
+                connectionString = configuration["ConnectionStrings:FileConnection"].ToString();
+            }
+            catch (AmazonSecretsManagerException ex)
+            {
+                Console.WriteLine($"AWS Secrets Manager exception: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
         }
 
         // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -105,7 +107,7 @@ internal class Program
             });
         });
         builder.Services.AddMemoryCache();
-        builder.Services.AddDistributedMemoryCache(); 
+        builder.Services.AddDistributedMemoryCache();
         builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
         builder.Services.AddScoped<ICredentialService, CredentialManager>();
         builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
@@ -135,9 +137,9 @@ internal class Program
 
         app.UseCors();
 
-        app.UseRouting();
-
         app.UseStaticFiles();
+
+        app.UseRouting();
 
         app.UseHttpsRedirection();
 

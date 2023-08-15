@@ -8,6 +8,13 @@ using StaticFileSecureCall.Decorators;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using StaticFileSecureCall.Models;
 using System.Reflection.Metadata.Ecma335;
+using Azure;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
+using static System.Net.Mime.MediaTypeNames;
+using System.Diagnostics.Contracts;
+using System.Net.Sockets;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -31,9 +38,10 @@ namespace StaticFileSecureCall.Controllers
         private readonly IKeyGenerator _generator;
         private readonly IPersistence _persistenceService;
         private readonly IMailDeliveryService _emailService;
+        private IWebHostEnvironment _webHostEnvironment;
 
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
@@ -41,6 +49,7 @@ namespace StaticFileSecureCall.Controllers
             _logger = logger;
             _persistenceService = persistenceService;
             _emailService = emailService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet("status")]
@@ -106,9 +115,6 @@ namespace StaticFileSecureCall.Controllers
             try
             {
                 var all = _persistenceService.GetAllFilesAsync().Result;
-                foreach (var file in all) { 
-                Console.WriteLine(file);    
-                }
                 result = all.Where(a => a.InternalId == refid).First();
             }
             catch (Exception ex)
@@ -145,18 +151,30 @@ namespace StaticFileSecureCall.Controllers
 
         private IActionResult Download(string fileName)
         {
-            var Details = new MailDeliveryConfirmationContentModel()
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "StaticFiles", fileName);
+            if (System.IO.File.Exists(filePath))
             {
-                Filename = fileName,
-            };
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
-            if (!System.IO.File.Exists(filePath)) return NotFound("The file pathname or directory could not be located");
-            var memory = new MemoryStream();
-            using (var stream = new FileStream(filePath, FileMode.Open)) stream.CopyTo(memory);
-            memory.Position = 0;
-            var result = File(memory, GetContentType(filePath), Path.GetFileName(filePath));
-            _emailService.SendConfirmationEmailAsync(Details);//download is successfull.
-            return result;
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                {
+                    stream.CopyTo(memory);
+                }
+                memory.Position = 0;
+                var contentType = GetContentType(fileName);
+                // Serve the file for download
+                var result = File(memory, contentType, Path.GetFileName(filePath));
+                // Send the confirmation email
+                var details = new MailDeliveryConfirmationContentModel
+                {
+                    Filename = fileName
+                };
+                _emailService.SendConfirmationEmailAsync(details);
+                return result;
+            }
+            else
+            {
+                return NotFound("The File you're attempting to download couldn't be located or isn't 'Switched On'");
+            }
         }
 
         private string GetContentType(string path)
