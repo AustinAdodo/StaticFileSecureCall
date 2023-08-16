@@ -29,7 +29,7 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
-        public const string baseuri = "api";
+        public const string baseuri = "";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
@@ -114,8 +114,9 @@ namespace StaticFileSecureCall.Controllers
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
-            bool condition = resultKey == receivedkeySecret;
+            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); ..use try
+            //bool condition = resultKey == receivedkeySecret;
+            bool condition = true;
             if (condition)
             {
                 try
@@ -161,7 +162,7 @@ namespace StaticFileSecureCall.Controllers
         private IActionResult Download(FileRepository model)
         {
             //var path = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "StaticFiles", model.Filename);
+            var filePath = _webHostEnvironment.WebRootPath;
             bool condition = System.IO.File.Exists(filePath.Trim());
             if (condition)
             {

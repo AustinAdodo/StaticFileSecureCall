@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
 using Amazon.Extensions.NETCore.Setup;
 using Microsoft.AspNetCore.Hosting;
 using Amazon.SimpleEmail;
@@ -32,6 +33,7 @@ internal class Program
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        //CreateHostBuilder(args).Build().Run();
 
         //setup configuration and Environment
         var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
@@ -57,7 +59,7 @@ internal class Program
             {
                 var awsOptions = configuration.GetAWSOptions();
                 using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);
-                var secretName = "my-secret-name";
+                var secretName = "StaticFileSecureCall";
                 var request = new GetSecretValueRequest
                 {
                     SecretId = secretName
@@ -149,11 +151,21 @@ internal class Program
 
         app.MapControllers();
 
-        app.MapControllers();
-
         app.Run();
     }
-}
+
+    //Configure Web Host builder.
+//    public static IHostBuilder CreateHostBuilder(string[] args) =>
+//       Host.CreateDefaultBuilder(args)
+//           .ConfigureWebHostDefaults(webBuilder =>
+//           {
+//               webBuilder.Configure(app =>
+//               {
+//                   // Configure the host settings, services, and hosting environment
+                   
+//               });
+//           });
+//}
 
 
 
