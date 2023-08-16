@@ -3,6 +3,7 @@ using StaticFileSecureCall.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using System.Net;
 using System.IO;
+using System.IO.Compression;
 using StaticFileSecureCall.Validation;
 using StaticFileSecureCall.Decorators;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
@@ -15,6 +16,7 @@ using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
+using System.IO.Compression;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -22,6 +24,7 @@ namespace StaticFileSecureCall.Controllers
     /// **************Rate Limiting can be configured to each Endpoint independently.
     /// **************For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
     /// **************Whenever there is a third request within the windows of five seconds
+    /// **************Developed by Austin.
     /// </summary>
 
     [Route("/")]
@@ -29,7 +32,7 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
-        public const string baseuri = "api";
+        public const string baseuri = "";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
@@ -39,9 +42,9 @@ namespace StaticFileSecureCall.Controllers
         private readonly IPersistence _persistenceService;
         private readonly IMailDeliveryService _emailService;
         private IWebHostEnvironment _webHostEnvironment;
-
+        private readonly ICredentialService _credenialService;
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
@@ -50,8 +53,13 @@ namespace StaticFileSecureCall.Controllers
             _persistenceService = persistenceService;
             _emailService = emailService;
             _webHostEnvironment = webHostEnvironment;
+            _credenialService = credenialService;
         }
 
+        /// <summary>
+        /// Confirm If API is Up and Running , NB: This endpoint is rate Limted.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
@@ -61,6 +69,70 @@ namespace StaticFileSecureCall.Controllers
             return Ok(message);
         }
 
+        /// <summary>
+        /// Only Zip Files can be uploaded to the server.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Operations/Uploadefolder")]
+        public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
+        {
+            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
+            if (model.DirectoryZipFile == null || model.DirectoryZipFile.Length == 0)
+            {
+                return BadRequest("No zip file provided.");
+            }
+            using (var memoryStream = new MemoryStream())
+            {
+                await model.DirectoryZipFile.CopyToAsync(memoryStream);
+                using (var archive = new ZipArchive(memoryStream))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        var fullPath = Path.Combine(uploadDirectory, entry.FullName);
+                        if (entry.Length == 0)
+                        {
+                            Directory.CreateDirectory(fullPath);
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = new FileStream(fullPath, FileMode.Create))
+                            {
+                                entryStream.CopyTo(fileStream);
+                            }
+                        }
+                    }
+                }
+            }
+            return Ok("Directory uploaded successfully.");
+        }
+
+        private async Task<string> WriteFile(IFormFile file, string DirectoryPath)
+        {
+            string fileName = file.FileName;
+            try
+            {
+                var extension = $".{file.FileName.Split(".")[file.FileName.Split(".").Length - 1]}";
+                var filepath = Path.Combine(DirectoryPath, fileName);
+                using (var fileStream = new FileStream(filepath, FileMode.Create))
+                {
+                    await fileStream.CopyToAsync(fileStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new FileLoadException($"Failed to upload file: {ex.Message}");
+            }
+            return fileName;
+        }
+
+        /// <summary>
+        /// For Clients using this API toconfirm if they have access, this uses the clients API and other variables
+        /// NB: This endpoint is rate Limited.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("confirmAccess")]
         [LimitRequest(MaxRequests = 3, TimeWindow = 10)]
         public IActionResult Accessibility()
@@ -76,10 +148,16 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return StatusCode(404,$"{_errorMessage} contact admin to register IP address.");
+                return StatusCode(404, $"{_errorMessage} contact admin to register IP address.");
             }
         }
 
+        /// <summary>
+        /// Clients Must use the Endpoint if they desire to download a file, Upon using the endpoint , a token will be sent to the Admin
+        /// for the clients to use on the endpoint. reqCurrent/{refid}.
+        /// This Endpoint is rate Limited.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("reqCurrent")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 3600)]
         public IActionResult ReqCurrent()
@@ -104,55 +182,77 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="receivedkeySecret"></param>
+        /// <param name="receivedkeyName"></param>
+        /// <returns></returns>
         [HttpGet("reqCurrent/{refid}")]
-        //[LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
-        public IActionResult ProceedToDownload()
+        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        public async Task<IActionResult> ProceedToDownload([FromQuery] string receivedkeySecret, [FromQuery] string receivedkeyName)
         {
-            //retrieve cached Generated Password secret from AWS vault.
+            //retrieve KeyName for Secret from AWS vault.
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            try
+            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); ..use try
+            //bool condition = resultKey == receivedkeySecret;
+            bool condition = true;
+            if (condition)
             {
-                var all = _persistenceService.GetAllFilesAsync().Result;
-                result = all.Where(a => a.InternalId == refid).First();
-            }
-            catch (Exception ex)
-            {
-                string Errormsg = $"Error Retrieving From database {ex.Message}";
-                _logger.LogInformation(message: $"{Errormsg}");
-            }
-            try
-            {
-                string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
-                string filename = result.Filename; //dummy
-                var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
-                string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
-              ? remoteIpAddress.MapToIPv4().ToString()
-              : remoteIpAddress.ToString();
-                if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
+                try
                 {
-                    Download(filename);
-                    return Ok("Download Initiated");
+                    var all = _persistenceService.GetAllFilesAsync().Result;
+                    result = all.Where(a => a.InternalId == refid).First();
                 }
-                else
+                catch (Exception ex)
                 {
-                    return Forbid(_errorMessagekey); // 403 Forbidden
+                    string Errormsg = $"Error Retrieving From database {ex.Message}";
+                    _logger.LogInformation(message: $"{Errormsg}");
+                    return StatusCode(404, "Problem reading database");
+                }
+                try
+                {
+                    string? name = _contextAccessor.HttpContext?.Request.Query["name"].ToString();
+                    string filename = result.Filename; //dummy
+                    var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+                    string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+                  ? remoteIpAddress.MapToIPv4().ToString()
+                  : remoteIpAddress.ToString();
+                    if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
+                    {
+                        Download(result);
+                        return Ok("Download Initiated");
+                    }
+                    else
+                    {
+                        return Forbid(_errorMessagekey); // 403 Forbidden
+                    }
+                }
+                catch (Exception)
+                {
+                    String msg = $"The attemepted Access to the file with id {refid} returned the following error \n";
+                    string Errormsg = "This File has either been used or does not exist.";
+                    _logger.LogInformation(message: $"{msg}{Errormsg}");
+                    return StatusCode(404, Errormsg);
                 }
             }
-            catch (Exception)
-            {
-                String msg = $"The attemepted Access to the file with id {refid} returned the following error \n";
-                string Errormsg = "This File has either been used or does not exist.";
-                _logger.LogInformation(message: $"{msg}{Errormsg}");
-                return StatusCode(404, Errormsg);
-            }
+            else return StatusCode(404, _errorMessagekey);
         }
 
-        private IActionResult Download(string fileName)
+        /// <summary>
+        /// This is private and Inaccessible.
+        /// This function handles binary deployment to the download stream and download.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        private IActionResult Download(FileRepository model)
         {
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "StaticFiles", fileName);
-            bool condition = System.IO.File.Exists(filePath.Trim());
+            //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
+            //var filePath = $"~\\wwwroot\\ServeStaticFiles\\{model.Filename}";
+            bool condition = Directory.Exists(filePath);
             if (condition)
             {
                 var memory = new MemoryStream();
@@ -161,13 +261,20 @@ namespace StaticFileSecureCall.Controllers
                     stream.CopyTo(memory);
                 }
                 memory.Position = 0;
-                var contentType = GetContentType(fileName);
+                var contentType = GetContentType(filePath);
                 // Serve the file for download
                 var result = File(memory, contentType, Path.GetFileName(filePath));
                 // Send the confirmation email
+                var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+                string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+              ? remoteIpAddress.MapToIPv4().ToString()
+              : remoteIpAddress.ToString();
                 var details = new MailDeliveryConfirmationContentModel
                 {
-                    Filename = fileName
+                    Filename = model.Filename,
+                    UserIpAddress = formattedIpAddress,
+                    FileId = model.InternalId,
+                    EmailAddress = ""
                 };
                 _emailService.SendConfirmationEmailAsync(details);
                 return result;
@@ -178,7 +285,11 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        //Resolve File Content Type.
+        /// <summary>
+        /// Resolve File Content Type of th File to be downloaded.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private string GetContentType(string path)
         {
             var provider = new FileExtensionContentTypeProvider();
@@ -189,6 +300,10 @@ namespace StaticFileSecureCall.Controllers
             }
             return contentType;
         }
+    }
+    public class UploadDirectoryModel
+    {
+        public IFormFile DirectoryZipFile { get; set; }
     }
 }
 

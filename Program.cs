@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
 using Amazon.Extensions.NETCore.Setup;
 using Microsoft.AspNetCore.Hosting;
 using Amazon.SimpleEmail;
@@ -18,6 +19,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.Design;
 using System.Data.Entity;
+using Microsoft.Extensions.FileProviders;
 
 internal class Program
 {
@@ -32,15 +34,16 @@ internal class Program
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        //CreateHostBuilder(args).Build().Run();
 
         //setup configuration and Environment
+        var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{CurrentEnvironment}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
-        var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         string connectionString = string.Empty;
         if (CurrentEnvironment == Environments.Development)
         {
@@ -50,14 +53,14 @@ internal class Program
             if (devConnection != null) connectionString = devConnection;
         }
 
-        //AWS Configurations options.
+        //AWS ConnectionString Configurations options.
         if (CurrentEnvironment == Environments.Production)
         {
             try
             {
                 var awsOptions = configuration.GetAWSOptions();
                 using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);
-                var secretName = "my-secret-name";
+                var secretName = "StaticFileSecureCall";
                 var request = new GetSecretValueRequest
                 {
                     SecretId = secretName
@@ -135,9 +138,9 @@ internal class Program
 
         app.UseMiddleware<IpAuthorizationMiddleware>();
 
-        app.UseCors();
+        app.UseStaticFiles(); //The default directory is {content root}/wwwroot, but it can be changed with the UseWebRoot method
 
-        app.UseStaticFiles();
+        app.UseCors();
 
         app.UseRouting();
 
@@ -149,11 +152,22 @@ internal class Program
 
         app.MapControllers();
 
-        app.MapControllers();
-
         app.Run();
     }
 }
+
+//Configure Web Host builder.
+//    public static IHostBuilder CreateHostBuilder(string[] args) =>
+//       Host.CreateDefaultBuilder(args)
+//           .ConfigureWebHostDefaults(webBuilder =>
+//           {
+//               webBuilder.Configure(app =>
+//               {
+//                   // Configure the host settings, services, and hosting environment
+
+//               });
+//           });
+//}
 
 
 
@@ -173,4 +187,11 @@ internal class Program
 //{
 //    // Configure the JWT authentication settings
 //    // For example: options.TokenValidationParameters = ...
+//});
+
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider(
+//           Path.Combine(builder.Environment.ContentRootPath, "MyStaticFiles")),
+//    RequestPath = "/StaticFiles"
 //});

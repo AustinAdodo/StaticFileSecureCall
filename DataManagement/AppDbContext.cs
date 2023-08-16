@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using StaticFileSecureCall.Models;
 using Microsoft.Extensions.Logging;
+using System.Xml;
 
 namespace StaticFileSecureCall.DataManagement
 {
@@ -17,6 +18,16 @@ namespace StaticFileSecureCall.DataManagement
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            // Configure the column to store UUID as NVARCHAR(40)
+            modelBuilder.Entity<FileRepository>()
+                .Property(e => e.InternalId)
+                .HasMaxLength(40)
+                .IsRequired();
         }
 
         ///dbsets
