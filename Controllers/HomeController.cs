@@ -17,6 +17,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
 using System.IO.Compression;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -74,7 +75,8 @@ namespace StaticFileSecureCall.Controllers
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        [HttpPost("Operations/Uploadefolder")]
+        [HttpPost("Operations/Uploadfolder")]
+        [Authorize]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
             string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");

@@ -8,7 +8,9 @@ namespace StaticFileSecureCall.Services
     public class PersistenceService : IPersistence
     {
         private readonly ILogger<PersistenceService> _logger;
+
         private readonly AppDbContext _appContext;
+
         private IWebHostEnvironment _webHostEnvironment;
         public PersistenceService(AppDbContext appContext, ILogger<PersistenceService> logger, IWebHostEnvironment webHostEnvironment)
         {
