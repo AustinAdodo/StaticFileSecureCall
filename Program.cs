@@ -19,6 +19,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.Design;
 using System.Data.Entity;
+using Microsoft.Extensions.FileProviders;
 
 internal class Program
 {
@@ -52,7 +53,7 @@ internal class Program
             if (devConnection != null) connectionString = devConnection;
         }
 
-        //AWS Configurations options.
+        //AWS ConnectionString Configurations options.
         if (CurrentEnvironment == Environments.Production)
         {
             try
@@ -137,9 +138,9 @@ internal class Program
 
         app.UseMiddleware<IpAuthorizationMiddleware>();
 
-        app.UseCors();
+        app.UseStaticFiles(); //The default directory is {content root}/wwwroot, but it can be changed with the UseWebRoot method
 
-        app.UseStaticFiles();
+        app.UseCors();
 
         app.UseRouting();
 
@@ -153,8 +154,9 @@ internal class Program
 
         app.Run();
     }
+}
 
-    //Configure Web Host builder.
+//Configure Web Host builder.
 //    public static IHostBuilder CreateHostBuilder(string[] args) =>
 //       Host.CreateDefaultBuilder(args)
 //           .ConfigureWebHostDefaults(webBuilder =>
@@ -162,7 +164,7 @@ internal class Program
 //               webBuilder.Configure(app =>
 //               {
 //                   // Configure the host settings, services, and hosting environment
-                   
+
 //               });
 //           });
 //}
@@ -185,4 +187,11 @@ internal class Program
 //{
 //    // Configure the JWT authentication settings
 //    // For example: options.TokenValidationParameters = ...
+//});
+
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider(
+//           Path.Combine(builder.Environment.ContentRootPath, "MyStaticFiles")),
+//    RequestPath = "/StaticFiles"
 //});

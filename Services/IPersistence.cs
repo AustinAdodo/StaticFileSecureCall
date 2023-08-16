@@ -7,7 +7,7 @@ namespace StaticFileSecureCall.Services
         public FileRepository GetFile(string internalId);
         Task<FileRepository> UpdateFileAsync(string internalId);
         Task<List<FileRepository>> GetAllFilesAsync();
-        void SaveFileAsync();
+        public Task SaveFileAsync(string fileName);
         void DeleteFileAsync(string internalId);
     }
 }

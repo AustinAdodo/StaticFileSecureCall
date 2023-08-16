@@ -27,11 +27,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="wwwroot\StaticFiles\" />
+	  <Folder Include="wwwroot\ServeStaticFiles\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="wwwroot\StaticFiles\File1\HelloWorld.txt" />
+	  <None Include="wwwroot\ServeStaticFiles\File1\HelloWorld.txt" />
 	</ItemGroup>
 
 </Project>

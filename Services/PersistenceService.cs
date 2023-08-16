@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using StaticFileSecureCall.DataManagement;
 using StaticFileSecureCall.Models;
 
@@ -8,10 +9,12 @@ namespace StaticFileSecureCall.Services
     {
         private readonly ILogger<PersistenceService> _logger;
         private readonly AppDbContext _appContext;
-        public PersistenceService(AppDbContext appContext, ILogger<PersistenceService> logger)
+        private IWebHostEnvironment _webHostEnvironment;
+        public PersistenceService(AppDbContext appContext, ILogger<PersistenceService> logger, IWebHostEnvironment webHostEnvironment)
         {
             _appContext = appContext;
             _logger = logger;
+            _webHostEnvironment = webHostEnvironment;
         }
         public void DeleteFileAsync(string internalId)
         {
@@ -30,9 +33,17 @@ namespace StaticFileSecureCall.Services
             return File;
         }
 
-        public void SaveFileAsync()
+        public async Task SaveFileAsync(string fileName)
         {
-            throw new NotImplementedException();
+            var model = new FileRepository()
+            {
+                Filename = fileName,
+                InternalId = Guid.NewGuid().ToString(),
+                Address = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", fileName),
+                Reference = "On"
+            };
+            _appContext.FileRepositories.Add(model);
+            await _appContext.SaveChangesAsync();
         }
 
         public Task<FileRepository> UpdateFileAsync(string internalId)

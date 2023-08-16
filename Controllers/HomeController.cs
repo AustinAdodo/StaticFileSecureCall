@@ -40,7 +40,6 @@ namespace StaticFileSecureCall.Controllers
         private readonly IMailDeliveryService _emailService;
         private IWebHostEnvironment _webHostEnvironment;
         private readonly ICredentialService _credenialService;
-
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
             IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
         {
@@ -61,6 +60,40 @@ namespace StaticFileSecureCall.Controllers
             string message = $"Api works fine and is ready to go! :)";
             _logger.LogInformation("Success health check initiated successfully");
             return Ok(message);
+        }
+
+        [HttpPost("Operations/Uploadefile")]
+        public async Task<IActionResult> UploadFile(IFormFile file, CancellationToken token) 
+        {
+            try
+            {
+                var result = await WriteFile(file);
+                if (result != null) await _persistenceService.SaveFileAsync(result);
+                return Ok("Successfully Uploaded");
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        private async Task<string> WriteFile(IFormFile file)
+        {
+            string fileName = file.FileName;
+            try
+            {
+                var extension = $".{file.FileName.Split(".")[file.FileName.Split(".").Length - 1]}";
+                var filepath = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles", fileName);
+                using (var fileStream = new FileStream(filepath,FileMode.Create))
+                {
+                    await fileStream.CopyToAsync(fileStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new FileLoadException($"Failed to upload file: {ex.Message}");
+            }
+            return fileName;
         }
 
         [HttpGet("confirmAccess")]
@@ -156,14 +189,15 @@ namespace StaticFileSecureCall.Controllers
                     return StatusCode(404, Errormsg);
                 }
             }
-            else return StatusCode(404,_errorMessagekey);
+            else return StatusCode(404, _errorMessagekey);
         }
 
         private IActionResult Download(FileRepository model)
         {
-            //var path = Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", fileName);
-            var filePath = _webHostEnvironment.WebRootPath;
-            bool condition = System.IO.File.Exists(filePath.Trim());
+            //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
+            //var filePath = $"~\\wwwroot\\ServeStaticFiles\\{model.Filename}";
+            bool condition = System.IO.File.Exists(filePath);
             if (condition)
             {
                 var memory = new MemoryStream();
@@ -183,7 +217,7 @@ namespace StaticFileSecureCall.Controllers
                 var details = new MailDeliveryConfirmationContentModel
                 {
                     Filename = model.Filename,
-                    UserIpAddress =formattedIpAddress,
+                    UserIpAddress = formattedIpAddress,
                     FileId = model.InternalId,
                     EmailAddress = ""
                 };
