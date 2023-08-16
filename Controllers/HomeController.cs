@@ -3,6 +3,7 @@ using StaticFileSecureCall.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using System.Net;
 using System.IO;
+using System.IO.Compression;
 using StaticFileSecureCall.Validation;
 using StaticFileSecureCall.Decorators;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
@@ -15,6 +16,7 @@ using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
+using System.IO.Compression;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -22,6 +24,7 @@ namespace StaticFileSecureCall.Controllers
     /// **************Rate Limiting can be configured to each Endpoint independently.
     /// **************For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
     /// **************Whenever there is a third request within the windows of five seconds
+    /// **************Developed by Austin.
     /// </summary>
 
     [Route("/")]
@@ -53,6 +56,10 @@ namespace StaticFileSecureCall.Controllers
             _credenialService = credenialService;
         }
 
+        /// <summary>
+        /// Confirm If API is Up and Running , NB: This endpoint is rate Limted.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
@@ -62,29 +69,54 @@ namespace StaticFileSecureCall.Controllers
             return Ok(message);
         }
 
-        [HttpPost("Operations/Uploadefile")]
-        public async Task<IActionResult> UploadFile(IFormFile file, CancellationToken token) 
+        /// <summary>
+        /// Only Zip Files can be uploaded to the server.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Operations/Uploadefolder")]
+        public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
-            try
+            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
+            if (model.DirectoryZipFile == null || model.DirectoryZipFile.Length == 0)
             {
-                var result = await WriteFile(file);
-                if (result != null) await _persistenceService.SaveFileAsync(result);
-                return Ok("Successfully Uploaded");
+                return BadRequest("No zip file provided.");
             }
-            catch (Exception ex)
+            using (var memoryStream = new MemoryStream())
             {
-                throw;
+                await model.DirectoryZipFile.CopyToAsync(memoryStream);
+                using (var archive = new ZipArchive(memoryStream))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        var fullPath = Path.Combine(uploadDirectory, entry.FullName);
+                        if (entry.Length == 0)
+                        {
+                            Directory.CreateDirectory(fullPath);
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = new FileStream(fullPath, FileMode.Create))
+                            {
+                                entryStream.CopyTo(fileStream);
+                            }
+                        }
+                    }
+                }
             }
+            return Ok("Directory uploaded successfully.");
         }
 
-        private async Task<string> WriteFile(IFormFile file)
+        private async Task<string> WriteFile(IFormFile file, string DirectoryPath)
         {
             string fileName = file.FileName;
             try
             {
                 var extension = $".{file.FileName.Split(".")[file.FileName.Split(".").Length - 1]}";
-                var filepath = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles", fileName);
-                using (var fileStream = new FileStream(filepath,FileMode.Create))
+                var filepath = Path.Combine(DirectoryPath, fileName);
+                using (var fileStream = new FileStream(filepath, FileMode.Create))
                 {
                     await fileStream.CopyToAsync(fileStream);
                 }
@@ -96,6 +128,11 @@ namespace StaticFileSecureCall.Controllers
             return fileName;
         }
 
+        /// <summary>
+        /// For Clients using this API toconfirm if they have access, this uses the clients API and other variables
+        /// NB: This endpoint is rate Limited.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("confirmAccess")]
         [LimitRequest(MaxRequests = 3, TimeWindow = 10)]
         public IActionResult Accessibility()
@@ -115,6 +152,12 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
+        /// <summary>
+        /// Clients Must use the Endpoint if they desire to download a file, Upon using the endpoint , a token will be sent to the Admin
+        /// for the clients to use on the endpoint. reqCurrent/{refid}.
+        /// This Endpoint is rate Limited.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("reqCurrent")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 3600)]
         public IActionResult ReqCurrent()
@@ -139,8 +182,14 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="receivedkeySecret"></param>
+        /// <param name="receivedkeyName"></param>
+        /// <returns></returns>
         [HttpGet("reqCurrent/{refid}")]
-        //[LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
         public async Task<IActionResult> ProceedToDownload([FromQuery] string receivedkeySecret, [FromQuery] string receivedkeyName)
         {
             //retrieve KeyName for Secret from AWS vault.
@@ -192,12 +241,18 @@ namespace StaticFileSecureCall.Controllers
             else return StatusCode(404, _errorMessagekey);
         }
 
+        /// <summary>
+        /// This is private and Inaccessible.
+        /// This function handles binary deployment to the download stream and download.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         private IActionResult Download(FileRepository model)
         {
             //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
             var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
             //var filePath = $"~\\wwwroot\\ServeStaticFiles\\{model.Filename}";
-            bool condition = System.IO.File.Exists(filePath);
+            bool condition = Directory.Exists(filePath);
             if (condition)
             {
                 var memory = new MemoryStream();
@@ -230,7 +285,11 @@ namespace StaticFileSecureCall.Controllers
             }
         }
 
-        //Resolve File Content Type.
+        /// <summary>
+        /// Resolve File Content Type of th File to be downloaded.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private string GetContentType(string path)
         {
             var provider = new FileExtensionContentTypeProvider();
@@ -241,6 +300,10 @@ namespace StaticFileSecureCall.Controllers
             }
             return contentType;
         }
+    }
+    public class UploadDirectoryModel
+    {
+        public IFormFile DirectoryZipFile { get; set; }
     }
 }
 
