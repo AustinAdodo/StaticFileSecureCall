@@ -198,9 +198,9 @@ namespace StaticFileSecureCall.Controllers
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); ..use try
-            //bool condition = resultKey == receivedkeySecret;
-            bool condition = true;
+            string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); //..use try
+            bool condition = resultKey == receivedkeySecret;
+            //bool condition = true;
             if (condition)
             {
                 try
