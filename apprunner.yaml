@@ -1,0 +1,11 @@
+version: 1.0
+runtime: dotnet6
+build:
+  commands:
+    build:
+    - dotnet run
+    - dotnet publish -c Release -o out
+run:
+  command: dotnet out/StaticFileSecureCall.dll
+  network:
+    port: 8000
