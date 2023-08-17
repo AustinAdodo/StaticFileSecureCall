@@ -17,6 +17,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
 using System.IO.Compression;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StaticFileSecureCall.Controllers
 {
@@ -74,7 +75,8 @@ namespace StaticFileSecureCall.Controllers
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        [HttpPost("Operations/Uploadefolder")]
+        [HttpPost("Operations/Uploadfolder")]
+        [Authorize]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
             string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
@@ -196,9 +198,9 @@ namespace StaticFileSecureCall.Controllers
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); ..use try
-            //bool condition = resultKey == receivedkeySecret;
-            bool condition = true;
+            string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); //..use try
+            bool condition = resultKey == receivedkeySecret;
+            //bool condition = true;
             if (condition)
             {
                 try
