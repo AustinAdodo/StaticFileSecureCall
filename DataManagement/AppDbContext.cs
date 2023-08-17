@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using StaticFileSecureCall.Models;
 using Microsoft.Extensions.Logging;
 using System.Xml;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace StaticFileSecureCall.DataManagement
 {
@@ -30,6 +31,10 @@ namespace StaticFileSecureCall.DataManagement
                 .IsRequired();
         }
 
+        public void Configure(EntityTypeBuilder<FileRepository> builder)
+        {
+
+        }
         ///dbsets
         public DbSet<FileRepository> FileRepositories { get; set; }
     }

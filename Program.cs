@@ -20,6 +20,8 @@ using Microsoft.Extensions.Options;
 using System.ComponentModel.Design;
 using System.Data.Entity;
 using Microsoft.Extensions.FileProviders;
+using System.Security;
+using Microsoft.Data.SqlClient;
 
 internal class Program
 {
@@ -48,9 +50,12 @@ internal class Program
         if (CurrentEnvironment == Environments.Development)
         {
             var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-            string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();
-            var devConnection = builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
-            if (devConnection != null) connectionString = devConnection;
+            string? pass = Environment.GetEnvironmentVariable("DB_PASSWORD").ToString();
+            var devConnection = builder.Configuration.GetConnectionString("FileConnection").ToString();
+            SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
+            ConnStrbuilder.Password = pass;
+            var securePassword = new SecureString();
+            if (ConnStrbuilder != null) connectionString = ConnStrbuilder.ToString();
         }
 
         //AWS ConnectionString Configurations options.

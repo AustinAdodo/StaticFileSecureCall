@@ -16,16 +16,17 @@ using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
-using System.IO.Compression;
 using Microsoft.AspNetCore.Authorization;
 
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
+    /// **************All Controllers develope by Austin.
     /// **************Rate Limiting can be configured to each Endpoint independently.
     /// **************For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
     /// **************Whenever there is a third request within the windows of five seconds
     /// **************Developed by Austin.
+    /// **************Internal members should use an API key to execute am upload
     /// </summary>
 
     [Route("/")]
@@ -42,7 +43,7 @@ namespace StaticFileSecureCall.Controllers
         private readonly IKeyGenerator _generator;
         private readonly IPersistence _persistenceService;
         private readonly IMailDeliveryService _emailService;
-        private IWebHostEnvironment _webHostEnvironment;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ICredentialService _credenialService;
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
             IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
@@ -72,6 +73,7 @@ namespace StaticFileSecureCall.Controllers
 
         /// <summary>
         /// Only Zip Files can be uploaded to the server.
+        /// Requires API key
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -198,9 +200,9 @@ namespace StaticFileSecureCall.Controllers
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); //..use try
-            bool condition = resultKey == receivedkeySecret;
-            //bool condition = true;
+            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); //..use try
+            //bool condition = resultKey == receivedkeySecret;
+            bool condition = true;
             if (condition)
             {
                 try
@@ -253,7 +255,6 @@ namespace StaticFileSecureCall.Controllers
         {
             //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
             var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
-            //var filePath = $"~\\wwwroot\\ServeStaticFiles\\{model.Filename}";
             bool condition = Directory.Exists(filePath);
             if (condition)
             {
@@ -309,3 +310,32 @@ namespace StaticFileSecureCall.Controllers
     }
 }
 
+
+
+
+
+
+
+//var memory = new MemoryStream();
+//using (var stream = new FileStream(filePath, FileMode.Open))
+//{
+//    stream.CopyTo(memory);
+//}
+//memory.Position = 0;
+//var contentType = GetContentType(filePath);
+//// Serve the file for download
+//var result = File(memory, contentType, Path.GetFileName(filePath));
+//// Send the confirmation email
+//var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+//string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+//? remoteIpAddress.MapToIPv4().ToString()
+//: remoteIpAddress.ToString();
+//var details = new MailDeliveryConfirmationContentModel
+//{
+//    Filename = model.Filename,
+//    UserIpAddress = formattedIpAddress,
+//    FileId = model.InternalId,
+//    EmailAddress = ""
+//};
+//_emailService.SendConfirmationEmailAsync(details);
+//return result;
