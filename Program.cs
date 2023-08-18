@@ -25,8 +25,8 @@ internal class Program
         if (CurrentEnvironment == Environments.Development)
         {
             var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-            string? pass = Environment.GetEnvironmentVariable("DB_PASSWORD").ToString();
-            var devConnection = builder.Configuration.GetConnectionString("FileConnection").ToString();
+            string? pass = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();
+            var devConnection = builder.Configuration.GetConnectionString("FileConnection")?.ToString();
             SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
             ConnStrbuilder.Password = pass;
             var securePassword = new SecureString();

@@ -2,16 +2,20 @@
 using Microsoft.EntityFrameworkCore;
 using StaticFileSecureCall.DataManagement;
 using StaticFileSecureCall.Models;
+using System.Data.Entity.Infrastructure;
 
 namespace StaticFileSecureCall.Services
 {
+    /// <summary>
+    /// This is the Query Provider : Must Implement IDbAsyncEnumerable<FileRepository> as sepcified wwhen using EF6.
+    /// </summary>
+
     public class PersistenceService : IPersistence
     {
         private readonly ILogger<PersistenceService> _logger;
-
         private readonly AppDbContext _appContext;
-
         private IWebHostEnvironment _webHostEnvironment;
+
         public PersistenceService(AppDbContext appContext, ILogger<PersistenceService> logger, IWebHostEnvironment webHostEnvironment)
         {
             _appContext = appContext;
@@ -20,6 +24,7 @@ namespace StaticFileSecureCall.Services
         }
         public void DeleteFileAsync(string internalId)
         {
+            // Implement your delete logic asynchronously
             throw new NotImplementedException();
         }
 
@@ -29,12 +34,11 @@ namespace StaticFileSecureCall.Services
             return all;
         }
 
-        public FileRepository GetFile(string internalId)
+        public async Task<FileRepository> GetFileAsync(string internalId)
         {
-            var File = GetAllFilesAsync().Result.Where(a => a.InternalId == internalId).First();
-            return File;
+            var file = await _appContext.FileRepositories.FirstOrDefaultAsync(a => a.InternalId == internalId);
+            return file;
         }
-
         public async Task SaveFileAsync(string fileName)
         {
             var model = new FileRepository()
@@ -44,13 +48,15 @@ namespace StaticFileSecureCall.Services
                 Address = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", fileName),
                 Reference = "On"
             };
-            _appContext.FileRepositories.Add(model);
+
+            _appContext.FileRepositories?.Add(model);
             await _appContext.SaveChangesAsync();
         }
-
-        public Task<FileRepository> UpdateFileAsync(string internalId)
+        public async Task<FileRepository> UpdateFileAsync(string internalId)
         {
+            // Implement your update logic asynchronously
             throw new NotImplementedException();
         }
     }
+
 }

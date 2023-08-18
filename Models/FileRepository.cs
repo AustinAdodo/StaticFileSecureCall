@@ -4,7 +4,9 @@ using StaticFileSecureCall.Validation;
 
 namespace StaticFileSecureCall.Models
 {
-    [UniqueFields(fieldNames: FieldNames.Names)]
+    /// <summary>
+    ///http://go.microsoft.com/fwlink/?LinkId=287068
+    /// </summary>
     public class FileRepository
     {
         [Key]

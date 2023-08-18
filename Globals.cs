@@ -2,6 +2,7 @@
 global using Amazon;
 global using Amazon.SecretsManager;
 global using Amazon.SecretsManager.Model;
+global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Configuration;
 global using StaticFileSecureCall;
 global using StaticFileSecureCall.DataManagement;
@@ -16,7 +17,6 @@ global using Microsoft.Extensions.FileProviders;
 global using System.Security;
 global using Microsoft.Data.SqlClient;
 global using AspNetCore.Authentication.ApiKey;
-global using Microsoft.EntityFrameworkCore;
 global using Microsoft.AspNetCore.Builder;
 global using Amazon.Extensions.NETCore.Setup;
 global using Microsoft.AspNetCore.Hosting;

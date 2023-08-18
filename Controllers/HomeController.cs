@@ -190,7 +190,7 @@ namespace StaticFileSecureCall.Controllers
             {
                 try
                 {
-                    var all = _persistenceService.GetAllFilesAsync().Result;
+                    var all = await _persistenceService.GetAllFilesAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
                 catch (Exception ex)
