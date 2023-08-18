@@ -1,3 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Amazon.Extensions.NETCore.Setup;
+using Microsoft.AspNetCore.Hosting;
+using Amazon.SimpleEmail;
+using System.IO;
+using Amazon;
+using Amazon.SecretsManager;
+using Amazon.SecretsManager.Model;
+using Microsoft.Extensions.Configuration;
+using StaticFileSecureCall;
+using StaticFileSecureCall.DataManagement;
+using StaticFileSecureCall.Services;
+using System;
+using AspNetCoreRateLimit;
+using Microsoft.Extensions.Hosting;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
+using System.ComponentModel.Design;
+using System.Data.Entity;
+using Microsoft.Extensions.FileProviders;
+using System.Security;
+using Microsoft.Data.SqlClient;
+using AspNetCore.Authentication.ApiKey;
+
 internal class Program
 {
     /// <summary>
@@ -69,6 +94,25 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
 
         //Configure Rate Limiting Policy and  rate limiting options
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = ApiKeyDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = ApiKeyDefaults.AuthenticationScheme;
+        })
+         .AddApiKeyInHeaderOrQueryParams<ApiKeyProvider>(options =>
+        {
+        options.Realm = "Your API";
+        options.KeyName = "x-api-key"; // The header or query parameter name for the API key
+        });
+    
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("ApiKeyPolicy", policy =>
+            {
+                policy.AddAuthenticationSchemes(ApiKeyDefaults.AuthenticationScheme);
+                policy.RequireAuthenticatedUser();
+            });
+        });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();

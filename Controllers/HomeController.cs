@@ -78,7 +78,7 @@ namespace StaticFileSecureCall.Controllers
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost("Operations/Uploadfolder")]
-        [Authorize]
+        [Authorize(Policy = "ApiKeyPolicy")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
             string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
