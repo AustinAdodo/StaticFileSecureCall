@@ -68,7 +68,7 @@ internal class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
-        //Configure Rate Limiting Policy and  rate limiting options
+        //Configure Rate Limiting Policy and rate limiting options
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = ApiKeyDefaults.AuthenticationScheme;
@@ -79,7 +79,6 @@ internal class Program
         options.Realm = "Your API";
         options.KeyName = "x-api-key"; // The header or query parameter name for the API key
         });
-    
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy("ApiKeyPolicy", policy =>

@@ -15,7 +15,7 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
-        public const string baseuri = "";
+        public const string baseuri = "http://assetcapitalfiat.us-east-1.elasticbeanstalk.com/";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
