@@ -1,23 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using StaticFileSecureCall.Services;
-using Microsoft.AspNetCore.StaticFiles;
-using System.Net;
-using System.IO;
-using System.IO.Compression;
-using StaticFileSecureCall.Validation;
-using StaticFileSecureCall.Decorators;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using StaticFileSecureCall.Models;
-using System.Reflection.Metadata.Ecma335;
-using Azure;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting;
-using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
-using static System.Net.Mime.MediaTypeNames;
-using System.Diagnostics.Contracts;
-using System.Net.Sockets;
-using Microsoft.AspNetCore.Authorization;
-
+﻿
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
@@ -34,7 +15,7 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
-        public const string baseuri = "";
+        public const string baseuri = "http://assetcapitalfiat.us-east-1.elasticbeanstalk.com/";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
@@ -62,6 +43,8 @@ namespace StaticFileSecureCall.Controllers
         /// Confirm If API is Up and Running , NB: This endpoint is rate Limted.
         /// </summary>
         /// <returns></returns>
+        
+        [HttpGet("/")]
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
@@ -78,7 +61,7 @@ namespace StaticFileSecureCall.Controllers
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost("Operations/Uploadfolder")]
-        [Authorize]
+        //[Authorize(Policy = "ApiKeyPolicy")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
             string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
@@ -207,14 +190,14 @@ namespace StaticFileSecureCall.Controllers
             {
                 try
                 {
-                    var all = _persistenceService.GetAllFilesAsync().Result;
+                    var all = await _persistenceService.GetAllFilesAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
                 catch (Exception ex)
                 {
                     string Errormsg = $"Error Retrieving From database {ex.Message}";
                     _logger.LogInformation(message: $"{Errormsg}");
-                    return StatusCode(404, "Problem reading database");
+                    return StatusCode(404, $"Problem reading database, Details : {ex.Message}");
                 }
                 try
                 {
@@ -226,7 +209,7 @@ namespace StaticFileSecureCall.Controllers
                   : remoteIpAddress.ToString();
                     if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
                     {
-                        Download(result);
+                        DownloadZip(result);
                         return Ok("Download Initiated");
                     }
                     else
@@ -251,11 +234,10 @@ namespace StaticFileSecureCall.Controllers
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        private IActionResult Download(FileRepository model)
+        private IActionResult DownloadZip(FileRepository model)
         {
-            //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
-            bool condition = Directory.Exists(filePath);
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", $"{model.Filename}.zip");
+            bool condition = System.IO.File.Exists(filePath);
             if (condition)
             {
                 var memory = new MemoryStream();
@@ -264,8 +246,8 @@ namespace StaticFileSecureCall.Controllers
                     stream.CopyTo(memory);
                 }
                 memory.Position = 0;
-                var contentType = GetContentType(filePath);
-                // Serve the file for download
+                var contentType = "application/zip"; // MIME type for ZIP files
+                // Serve the ZIP file for download
                 var result = File(memory, contentType, Path.GetFileName(filePath));
                 // Send the confirmation email
                 var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
@@ -284,7 +266,7 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return NotFound("The File you're attempting to download couldn't be located or isn't 'Switched On'");
+                return NotFound("The ZIP File you're attempting to download couldn't be located or isn't 'Switched On'");
             }
         }
 
@@ -309,6 +291,15 @@ namespace StaticFileSecureCall.Controllers
         public IFormFile DirectoryZipFile { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 

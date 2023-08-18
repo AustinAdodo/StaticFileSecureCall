@@ -1,33 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Builder;
-using Amazon.Extensions.NETCore.Setup;
-using Microsoft.AspNetCore.Hosting;
-using Amazon.SimpleEmail;
-using System.IO;
-using Amazon;
-using Amazon.SecretsManager;
-using Amazon.SecretsManager.Model;
-using Microsoft.Extensions.Configuration;
-//using Microsoft.AspNetCore.Authentication.JwtBearer;
-using StaticFileSecureCall;
-using StaticFileSecureCall.DataManagement;
-using StaticFileSecureCall.Services;
-using System;
-using AspNetCoreRateLimit;
-using Microsoft.Extensions.Hosting;
-using System.Text.Json;
-using Microsoft.Extensions.Options;
-using System.ComponentModel.Design;
-using System.Data.Entity;
-using Microsoft.Extensions.FileProviders;
-using System.Security;
-using Microsoft.Data.SqlClient;
-
 internal class Program
 {
     /// <summary>
-    /// ***********NB:IMiddleware Interface was not implmented because that will require 
-    /// ***********the inheriting middleware to be registered as transient service.
+    /// *********** NB:IMiddleware Interface was not implmented because that will require 
+    /// *********** the inheriting middleware to be registered as transient service.
     /// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
     /// ************ static file Middleware must be placed before app.UserRouting().
     /// </summary>
@@ -50,8 +25,8 @@ internal class Program
         if (CurrentEnvironment == Environments.Development)
         {
             var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-            string? pass = Environment.GetEnvironmentVariable("DB_PASSWORD").ToString();
-            var devConnection = builder.Configuration.GetConnectionString("FileConnection").ToString();
+            string? pass = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();
+            var devConnection = builder.Configuration.GetConnectionString("FileConnection")?.ToString();
             SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
             ConnStrbuilder.Password = pass;
             var securePassword = new SecureString();
@@ -92,8 +67,24 @@ internal class Program
         // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-
-        //Configure Rate Limiting Policy and  rate limiting options
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = ApiKeyDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = ApiKeyDefaults.AuthenticationScheme;
+        })
+         .AddApiKeyInHeaderOrQueryParams<ApiKeyProvider>(options =>
+        {
+        options.Realm = "Your API";
+        options.KeyName = "x-api-key"; // The header or query parameter name for the API key
+        });
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("ApiKeyPolicy", policy =>
+            {
+                policy.AddAuthenticationSchemes(ApiKeyDefaults.AuthenticationScheme);
+                policy.RequireAuthenticatedUser();
+            });
+        });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
