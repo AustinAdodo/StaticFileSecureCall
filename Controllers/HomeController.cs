@@ -1,23 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using StaticFileSecureCall.Services;
-using Microsoft.AspNetCore.StaticFiles;
-using System.Net;
-using System.IO;
-using System.IO.Compression;
-using StaticFileSecureCall.Validation;
-using StaticFileSecureCall.Decorators;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using StaticFileSecureCall.Models;
-using System.Reflection.Metadata.Ecma335;
-using Azure;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting;
-using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
-using static System.Net.Mime.MediaTypeNames;
-using System.Diagnostics.Contracts;
-using System.Net.Sockets;
-using Microsoft.AspNetCore.Authorization;
-
+﻿
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
@@ -78,7 +59,7 @@ namespace StaticFileSecureCall.Controllers
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost("Operations/Uploadfolder")]
-        [Authorize(Policy = "ApiKeyPolicy")]
+        //[Authorize(Policy = "ApiKeyPolicy")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
             string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
