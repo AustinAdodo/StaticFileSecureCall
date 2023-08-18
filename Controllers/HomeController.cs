@@ -207,7 +207,7 @@ namespace StaticFileSecureCall.Controllers
                   : remoteIpAddress.ToString();
                     if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
                     {
-                        Download(result);
+                        DownloadZip(result);
                         return Ok("Download Initiated");
                     }
                     else
@@ -232,11 +232,10 @@ namespace StaticFileSecureCall.Controllers
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        private IActionResult Download(FileRepository model)
+        private IActionResult DownloadZip(FileRepository model)
         {
-            //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
-            bool condition = Directory.Exists(filePath);
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", $"{model.Filename}.zip");
+            bool condition = System.IO.File.Exists(filePath);
             if (condition)
             {
                 var memory = new MemoryStream();
@@ -245,8 +244,8 @@ namespace StaticFileSecureCall.Controllers
                     stream.CopyTo(memory);
                 }
                 memory.Position = 0;
-                var contentType = GetContentType(filePath);
-                // Serve the file for download
+                var contentType = "application/zip"; // MIME type for ZIP files
+                // Serve the ZIP file for download
                 var result = File(memory, contentType, Path.GetFileName(filePath));
                 // Send the confirmation email
                 var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
@@ -265,7 +264,7 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return NotFound("The File you're attempting to download couldn't be located or isn't 'Switched On'");
+                return NotFound("The ZIP File you're attempting to download couldn't be located or isn't 'Switched On'");
             }
         }
 
@@ -290,6 +289,15 @@ namespace StaticFileSecureCall.Controllers
         public IFormFile DirectoryZipFile { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
