@@ -7,7 +7,7 @@ using System.Data.Entity.Infrastructure;
 namespace StaticFileSecureCall.Services
 {
     /// <summary>
-    /// This is the Query Provider : Must Implement IDbAsyncEnumerable<FileRepository> as sepcified wwhen using EF6.
+    /// This is the Query Provider : Must Implement IDbAsyncEnumerable<FileRepository> as sepcified when using EF6.
     /// </summary>
 
     public class PersistenceService : IPersistence
@@ -28,12 +28,11 @@ namespace StaticFileSecureCall.Services
             throw new NotImplementedException();
         }
 
-        public async Task<List<FileRepository>> GetAllFilesAsync()
+        public async Task<IEnumerable<FileRepository>> GetAllFilesAsync()
         {
             var all = await _appContext.FileRepositories.ToListAsync();
             return all;
         }
-
         public async Task<FileRepository> GetFileAsync(string internalId)
         {
             var file = await _appContext.FileRepositories.FirstOrDefaultAsync(a => a.InternalId == internalId);

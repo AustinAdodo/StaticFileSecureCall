@@ -13,27 +13,22 @@ namespace StaticFileSecureCall.DataManagement
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
+            //FileRepositories = Set<FileRepository>();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            // Configure the column to store UUID as NVARCHAR(40)
             modelBuilder.Entity<FileRepository>()
                 .Property(e => e.InternalId)
                 .HasMaxLength(40)
                 .IsRequired();
         }
-
-        //public void Configure(EntityTypeBuilder<FileRepository> builder)
-        //{
-
-        //}
+        //public void Configure(EntityTypeBuilder<FileRepository> builder) { }
 
         ///dbsets <summary>
         /// GenericDbset
         /// </summary>
-
-        public Microsoft.EntityFrameworkCore.DbSet<FileRepository>? FileRepositories { get; set; }
+        public Microsoft.EntityFrameworkCore.DbSet<FileRepository> FileRepositories { get; set; }
     }
 }

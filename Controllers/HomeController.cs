@@ -197,7 +197,7 @@ namespace StaticFileSecureCall.Controllers
                 {
                     string Errormsg = $"Error Retrieving From database {ex.Message}";
                     _logger.LogInformation(message: $"{Errormsg}");
-                    return StatusCode(404, "Problem reading database");
+                    return StatusCode(404, $"Problem reading database, Details : {ex.Message}");
                 }
                 try
                 {
