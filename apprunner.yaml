@@ -3,9 +3,8 @@ runtime: dotnet6
 build:
   commands:
     build:
-      - dotnet publish -c Release -o out   
+      - dotnet publish -c Release -o out
 run:
-  runtime-version: 6.0
   command: dotnet out/StaticFileSecureCall.dll
   network:
     port: 5000
