@@ -2,7 +2,7 @@
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
-    /// **************All Controllers develope by Austin.
+    /// **************All Controllers developed by Austin.
     /// **************Rate Limiting can be configured to each Endpoint independently.
     /// **************For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
     /// **************Whenever there is a third request within the windows of five seconds
@@ -43,7 +43,6 @@ namespace StaticFileSecureCall.Controllers
         /// Confirm If API is Up and Running , NB: This endpoint is rate Limted.
         /// </summary>
         /// <returns></returns>
-        
         [HttpGet("/")]
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
@@ -190,7 +189,7 @@ namespace StaticFileSecureCall.Controllers
             {
                 try
                 {
-                    var all = await _persistenceService.GetAllFilesAsync();
+                    var all =  await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
                 catch (Exception ex)

@@ -6,7 +6,7 @@ namespace StaticFileSecureCall.Services
     {
         public Task<FileRepository> GetFileAsync(string internalId);
         Task<FileRepository> UpdateFileAsync(string internalId);
-        public Task<IEnumerable<FileRepository>> GetAllFilesAsync();
+        public Task<IQueryable<FileRepository>> GetAllFilesAsync();
         public Task SaveFileAsync(string fileName);
         void DeleteFileAsync(string internalId);
     }

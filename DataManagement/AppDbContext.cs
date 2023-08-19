@@ -25,10 +25,6 @@ namespace StaticFileSecureCall.DataManagement
                 .IsRequired();
         }
         //public void Configure(EntityTypeBuilder<FileRepository> builder) { }
-
-        ///dbsets <summary>
-        /// GenericDbset
-        /// </summary>
-        public Microsoft.EntityFrameworkCore.DbSet<FileRepository> FileRepositories { get; set; }
+        public DbSet<FileRepository> FileRepositories { get; set; }
     }
 }
