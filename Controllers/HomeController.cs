@@ -1,4 +1,6 @@
 ﻿
+using Amazon.Runtime;
+
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
@@ -15,6 +17,7 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
+        public readonly string _currentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").ToString();
         public const string baseuri = "http://assetcapitalfiat.us-east-1.elasticbeanstalk.com/";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
@@ -63,7 +66,7 @@ namespace StaticFileSecureCall.Controllers
         //[Authorize(Policy = "ApiKeyPolicy")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
-            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
+            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}", "ServeStaticFiles", $"Check{Guid.NewGuid()}");
             if (model.DirectoryZipFile == null || model.DirectoryZipFile.Length == 0)
             {
                 return BadRequest("No zip file provided.");
@@ -181,15 +184,25 @@ namespace StaticFileSecureCall.Controllers
             //retrieve KeyName for Secret from AWS vault.
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
+            receivedkeyName = "TestCredential";
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); //..use try
-            //bool condition = resultKey == receivedkeySecret;
-            bool condition = true;
+            bool condition = false;
+            try
+            {
+                string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
+                condition = resultKey == receivedkeySecret;
+                if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+            }
+            catch (AWSCommonRuntimeException ex)
+            {
+                if (_currentEnvironment == Environments.Development) throw;
+                if (_currentEnvironment == Environments.Production) return StatusCode(406, ex.Message);
+            }
             if (condition)
             {
                 try
                 {
-                    var all =  await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
+                    var all = await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
                 catch (Exception ex)
