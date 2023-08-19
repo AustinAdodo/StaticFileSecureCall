@@ -32,6 +32,7 @@ namespace StaticFileSecureCall.Services
             var all =  _appContext.FileRepositories.AsQueryable();
             return all;
         }
+
         public async Task<FileRepository> GetFileAsync(string internalId)
         {
             var file = await _appContext.FileRepositories.FirstOrDefaultAsync(a => a.InternalId == internalId);

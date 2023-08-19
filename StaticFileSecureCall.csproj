@@ -12,17 +12,17 @@
 
 	<ItemGroup>
 		<PackageReference Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
-		<!--<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />-->
 		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
 		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.7" />
 		<PackageReference Include="AWSSDK.SecretsManager" Version="3.7.200.14" />
 		<PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.200.16" />
+		<PackageReference Include="LinqKit.EntityFramework" Version="1.2.4" />
 		<PackageReference Include="MailKit" Version="4.1.0" />
 		<PackageReference Include="Microsoft.AspNet.Identity.EntityFramework" Version="2.2.4" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.21" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.10" />
-		<!--<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.0" />-->
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql.Design" Version="1.1.2" />
@@ -37,5 +37,9 @@
 	<ItemGroup>
 	  <None Include="wwwroot\ServeStaticFiles\File1\HelloWorld.txt" />
 	</ItemGroup>
+
+	<!--<ItemGroup>-->
+		<!--<InternalsVisibleTo Include="" />-->
+	<!--</ItemGroup>-->
 
 </Project>
