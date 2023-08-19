@@ -77,9 +77,9 @@ namespace StaticFileSecureCall.Services
                          $"FileId :{details.FileId} " +
                          $"Date and Time: {formattedDateTime}" +
                         $"\n\n\n regards Austin.live.ai.";
-            var secretName = await _credentialService.ImportCredentialAsync("YOUR_ACCESS_KEY_ID");
-            var credentials = new Amazon.Runtime.BasicAWSCredentials(secretName, "YOUR_SECRET_ACCESS_KEY");
-            var sesClient = new Amazon.SimpleEmail.AmazonSimpleEmailServiceClient(credentials, Amazon.RegionEndpoint.USEast1);
+            var secretName = await _credentialService.ImportCredentialAsync("StaticFileSecureCall");
+            var credentials = new BasicAWSCredentials(secretName, "YOUR_SECRET_ACCESS_KEY");
+            var sesClient = new AmazonSimpleEmailServiceClient(credentials, RegionEndpoint.USEast1);
             var sendRequest = new SendEmailRequest
             {
                 Source = Username,

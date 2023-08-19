@@ -9,6 +9,15 @@ internal class Program
     /// ************ static file Middleware must be placed before app.UserRouting().
     /// </summary>
     /// <param name="args"></param>
+    private static readonly ILogger<Program> _logger = CreateLogger();
+    private static ILogger<Program> CreateLogger()
+    {
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+        });
+        return loggerFactory.CreateLogger<Program>();
+    }
 
     private static async Task Main(string[] args)
     {
@@ -23,6 +32,7 @@ internal class Program
             .AddJsonFile($"appsettings.{CurrentEnvironment}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
+        _logger.LogInformation("Application starting...");
         string connectionString = string.Empty;
         if (CurrentEnvironment == Environments.Development)
         {
@@ -38,12 +48,13 @@ internal class Program
         //AWS ConnectionString Configurations options.
         if (CurrentEnvironment == Environments.Production)
         {
-            try 
+            try
             {
+                //cache
                 var awsOptions = configuration.GetAWSOptions();
                 var secretNameMain = "StaticFileSecureCall"; //AWS access key ID
-                var authenticationSecret = "SEcret"; //AWS secret access key
-                var secretNameConn = "ConnectionStringSecret";
+                var authenticationSecret = ""; //AWS secret access key
+                var secretNameConn = "ConnectionStringSecret"; //retrieval of the connectionString Password.
                 AWSCredentials credentials = new BasicAWSCredentials(secretNameMain, authenticationSecret);
                 var config = new AmazonSecretsManagerConfig
                 {
@@ -68,11 +79,11 @@ internal class Program
             }
             catch (AmazonSecretsManagerException ex)
             {
-                Console.WriteLine($"AWS Secrets Manager exception: {ex.Message}");
+                _logger.LogError($"AWS Secrets Manager exception: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                _logger.LogError($"An error occurred: {ex.Message}");
             }
         }
 
@@ -86,8 +97,8 @@ internal class Program
         })
          .AddApiKeyInHeaderOrQueryParams<ApiKeyProvider>(options =>
         {
-        options.Realm = "Your API";
-        options.KeyName = "x-api-key"; // The header or query parameter name for the API key
+            options.Realm = "Your API";
+            options.KeyName = "x-api-key"; // The header or query parameter name for the API key
         });
         builder.Services.AddAuthorization(options =>
         {
