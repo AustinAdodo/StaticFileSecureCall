@@ -21,6 +21,7 @@ namespace StaticFileSecureCall.Services
             _logger = logger;
             _webHostEnvironment = webHostEnvironment;
         }
+        
         public void DeleteFileAsync(string internalId)
         {
             // Implement your delete logic asynchronously
@@ -38,6 +39,7 @@ namespace StaticFileSecureCall.Services
             var file = await _appContext.FileRepositories.FirstOrDefaultAsync(a => a.InternalId == internalId);
             return file;
         }
+        
         public async Task SaveFileAsync(string fileName)
         {
             var model = new FileRepository()
@@ -51,6 +53,7 @@ namespace StaticFileSecureCall.Services
             _appContext.FileRepositories?.Add(model);
             await _appContext.SaveChangesAsync();
         }
+        
         public async Task<FileRepository> UpdateFileAsync(string internalId)
         {
             // Implement your update logic asynchronously
