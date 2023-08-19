@@ -167,7 +167,7 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return Forbid(_errorMessage); // 403 Forbidden
+                return StatusCode(StatusCodes.Status403Forbidden,_errorMessage); // 403 Forbidden
             }
         }
 
