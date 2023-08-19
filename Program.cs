@@ -1,3 +1,5 @@
+using System.Data.Common;
+
 internal class Program
 {
     /// <summary>
@@ -39,11 +41,18 @@ internal class Program
             try 
             {
                 var awsOptions = configuration.GetAWSOptions();
+                var secretNameMain = "StaticFileSecureCall"; //AWS access key ID
+                var authenticationSecret = "SEcret"; //AWS secret access key
+                var secretNameConn = "ConnectionStringSecret";
+                AWSCredentials credentials = new BasicAWSCredentials(secretNameMain, authenticationSecret);
+                var config = new AmazonSecretsManagerConfig
+                {
+                    RegionEndpoint = RegionEndpoint.GetBySystemName(awsOptions.Region.SystemName)
+                };
                 using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);
-                var secretName = "StaticFileSecureCall";
                 var request = new GetSecretValueRequest
                 {
-                    SecretId = secretName
+                    SecretId = secretNameConn
                 };
                 var response = await secretsManagerClient.GetSecretValueAsync(request);
                 if (response.SecretString == null) throw new Exception("Secret string is empty or null.");
@@ -51,8 +60,11 @@ internal class Program
                 var secretObject = JsonSerializer.Deserialize<Dictionary<string, string>>(secret);
                 var password = secretObject["password"];
                 //Update the connection string in IConfiguration
-                configuration["ConnectionStrings:FileConnection"] = configuration["ConnectionStrings:FileConnection"]?.Replace("__PASSWORD__", password);
-                connectionString = configuration["ConnectionStrings:FileConnection"].ToString();
+                string? devConnection = configuration["ConnectionStrings:FileConnection"];
+                if (devConnection == null) throw new ArgumentNullException("Connection String cannot be null");
+                SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
+                ConnStrbuilder.Password = password;
+                if (ConnStrbuilder != null) connectionString = ConnStrbuilder.ToString();
             }
             catch (AmazonSecretsManagerException ex)
             {
