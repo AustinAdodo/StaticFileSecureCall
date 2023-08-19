@@ -15,7 +15,7 @@
     public class HomeController : Controller
     {
         public readonly string _currentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").ToString();
-        public const string baseuri = "http://assetcapitalfiat.us-east-1.elasticbeanstalk.com/";
+        public const string baseuri = "https://assetcapitalfiat.us-east-1.elasticbeanstalk.com/";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
@@ -44,6 +44,7 @@
         /// </summary>
         /// <returns></returns>
         [HttpGet("/")]
+        [HttpGet(" ")]
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
