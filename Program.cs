@@ -36,7 +36,7 @@ internal class Program
         //AWS ConnectionString Configurations options.
         if (CurrentEnvironment == Environments.Production)
         {
-            try
+            try 
             {
                 var awsOptions = configuration.GetAWSOptions();
                 using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);

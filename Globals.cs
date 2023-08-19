@@ -1,5 +1,6 @@
 ﻿global using System;
 global using Amazon;
+global using Amazon.Runtime;
 global using Amazon.SecretsManager;
 global using Amazon.SecretsManager.Model;
 global using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,8 @@ global using System.Net;
 global using StaticFileSecureCall.Models;
 global using StaticFileSecureCall.Decorators;
 global using System.IO.Compression;
+global using System.Management;
+global using Amazon.SimpleEmail.Model;
 global using Microsoft.EntityFrameworkCore.SqlServer;
 global using Microsoft.Extensions.Options;
 global using System.ComponentModel.Design;

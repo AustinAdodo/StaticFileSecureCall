@@ -1,5 +1,4 @@
-﻿
-namespace StaticFileSecureCall.Controllers
+﻿namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
     /// **************All Controllers developed by Austin.
@@ -15,6 +14,7 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
+        public readonly string _currentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").ToString();
         public const string baseuri = "http://assetcapitalfiat.us-east-1.elasticbeanstalk.com/";
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
@@ -63,7 +63,7 @@ namespace StaticFileSecureCall.Controllers
         //[Authorize(Policy = "ApiKeyPolicy")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
-            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
+            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}", "ServeStaticFiles", $"Check{Guid.NewGuid()}");
             if (model.DirectoryZipFile == null || model.DirectoryZipFile.Length == 0)
             {
                 return BadRequest("No zip file provided.");
@@ -150,21 +150,22 @@ namespace StaticFileSecureCall.Controllers
         {
             //var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
             var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
-            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+            string? formattedIpAddress = remoteIpAddress?.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
                ? remoteIpAddress.MapToIPv4().ToString()
                : remoteIpAddress.ToString();
             if (_authorizedIpAddresses.Contains(formattedIpAddress))
             {
                 // Authorized logic
-                string message = $"A token has been sent to the admin, kindly request for this token" +
-                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
-                    $"This token will expire in 45 minutes.";
                 _generator.ConfigureKeyAsync();
+                string message = $"A token has been sent to the admin, kindly request for this token, " +
+                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
+                    $"This token will expire in 45 minutes."+
+                    $"Input the provided 'Secret' and 'Secret Name' on the input body tag. ";
                 return Ok(message);
             }
             else
             {
-                return Forbid(_errorMessage); // 403 Forbidden
+                return StatusCode(StatusCodes.Status403Forbidden,_errorMessage); // 403 Forbidden
             }
         }
 
@@ -181,15 +182,27 @@ namespace StaticFileSecureCall.Controllers
             //retrieve KeyName for Secret from AWS vault.
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
+            receivedkeyName = "TestCredential";
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); //..use try
-            //bool condition = resultKey == receivedkeySecret;
-            bool condition = true;
+            bool condition = false;
+            try
+            {
+                //add retries
+                string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
+                condition = resultKey == receivedkeySecret;
+                if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+            }
+            catch (AWSCommonRuntimeException ex)
+            {
+                if (_currentEnvironment == Environments.Development) throw;
+                if (_currentEnvironment == Environments.Production) return StatusCode(406, ex.Message);
+            }
             if (condition)
             {
                 try
                 {
-                    var all =  await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
+                    //add retries
+                    var all = await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
                 catch (Exception ex)
@@ -224,7 +237,7 @@ namespace StaticFileSecureCall.Controllers
                     return StatusCode(404, Errormsg);
                 }
             }
-            else return StatusCode(404, _errorMessagekey);
+            else return StatusCode(StatusCodes.Status417ExpectationFailed, _errorMessagekey);
         }
 
         /// <summary>
