@@ -1,15 +1,4 @@
-﻿using MimeKit;
-using System.Management;
-using System;
-using System.Security.Authentication;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using MailKit.Security;
-using Amazon.SimpleEmail;
-using Amazon.SimpleEmail.Model;
-using Org.BouncyCastle.Bcpg;
-using StaticFileSecureCall.Models;
-
+﻿using Org.BouncyCastle.Bcpg;
 namespace StaticFileSecureCall.Services
 {
     /// <summary>
@@ -37,8 +26,10 @@ namespace StaticFileSecureCall.Services
         public async Task SendEmailAsync(string fromAddress, List<string> toAddress, string subject, string body)
         {
             //(~/.aws/credentials) and (~/.aws/config)
-            var credentials = new Amazon.Runtime.BasicAWSCredentials("YOUR_ACCESS_KEY_ID", "YOUR_SECRET_ACCESS_KEY");
-            var sesClient = new Amazon.SimpleEmail.AmazonSimpleEmailServiceClient(credentials, Amazon.RegionEndpoint.EUWest1);
+            var secretName = "StaticFileSecureCall";
+            var secretValue = await _credentialService.ImportCredentialAsync(secretName);
+            var credentials = new BasicAWSCredentials(secretName, secretValue);
+            var sesClient = new AmazonSimpleEmailServiceClient(credentials, RegionEndpoint.EUWest1);
             var sendRequest = new SendEmailRequest
             {
                 Source = fromAddress,

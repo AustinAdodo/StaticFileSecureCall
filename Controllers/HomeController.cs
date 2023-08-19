@@ -1,7 +1,4 @@
-﻿
-using Amazon.Runtime;
-
-namespace StaticFileSecureCall.Controllers
+﻿namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
     /// **************All Controllers developed by Austin.
@@ -153,16 +150,17 @@ namespace StaticFileSecureCall.Controllers
         {
             //var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
             var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
-            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+            string? formattedIpAddress = remoteIpAddress?.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
                ? remoteIpAddress.MapToIPv4().ToString()
                : remoteIpAddress.ToString();
             if (_authorizedIpAddresses.Contains(formattedIpAddress))
             {
                 // Authorized logic
-                string message = $"A token has been sent to the admin, kindly request for this token" +
-                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
-                    $"This token will expire in 45 minutes.";
                 _generator.ConfigureKeyAsync();
+                string message = $"A token has been sent to the admin, kindly request for this token, " +
+                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
+                    $"This token will expire in 45 minutes."+
+                    $"Input the provided 'Secret' and 'Secret Name' on the input body tag. ";
                 return Ok(message);
             }
             else
@@ -189,6 +187,7 @@ namespace StaticFileSecureCall.Controllers
             bool condition = false;
             try
             {
+                //add retries
                 string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
                 condition = resultKey == receivedkeySecret;
                 if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
@@ -202,6 +201,7 @@ namespace StaticFileSecureCall.Controllers
             {
                 try
                 {
+                    //add retries
                     var all = await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
@@ -237,7 +237,7 @@ namespace StaticFileSecureCall.Controllers
                     return StatusCode(404, Errormsg);
                 }
             }
-            else return StatusCode(404, _errorMessagekey);
+            else return StatusCode(StatusCodes.Status417ExpectationFailed, _errorMessagekey);
         }
 
         /// <summary>
