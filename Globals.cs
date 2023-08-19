@@ -14,7 +14,6 @@ global using System.Text.Json;
 global using System.Security;
 global using AspNetCore.Authentication.ApiKey;
 global using Microsoft.AspNetCore.Builder;
-global using System.Data.Entity;
 global using Microsoft.AspNetCore.Hosting;
 global using Amazon.SimpleEmail;
 global using System.IO;
