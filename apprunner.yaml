@@ -11,4 +11,4 @@ run:
     env: APP_PORT
   env:
     - name: ASPNETCORE_URLS
-      value: "http://"https://+:443"
+      value: "http://+:443"
