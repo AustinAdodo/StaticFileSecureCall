@@ -15,7 +15,7 @@
         {
             string[]? authorizedIpAddresses = _configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
             var remoteIpAddress = context.Connection.RemoteIpAddress;
-            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+            string? formattedIpAddress = remoteIpAddress.AddressFamily == AddressFamily.InterNetworkV6
                 ? remoteIpAddress.MapToIPv4().ToString() // Convert IPv6 to IPv4 format
                 : remoteIpAddress.ToString();
             if (authorizedIpAddresses.Contains(formattedIpAddress))
