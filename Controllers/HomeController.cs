@@ -43,8 +43,8 @@
         /// Confirm If API is Up and Running , NB: This endpoint is rate Limted.
         /// </summary>
         /// <returns></returns>
-        [HttpGet("/")]
         [HttpGet(" ")]
+        [HttpGet("/")]
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
