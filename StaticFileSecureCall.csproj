@@ -11,6 +11,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="wwwroot\ServeStaticFiles\File1\**" />
+	  <Content Remove="wwwroot\ServeStaticFiles\File1\**" />
+	  <EmbeddedResource Remove="wwwroot\ServeStaticFiles\File1\**" />
+	  <EntityDeploy Remove="wwwroot\ServeStaticFiles\File1\**" />
+	  <None Remove="wwwroot\ServeStaticFiles\File1\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
 		<PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
 		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.7" />
@@ -28,14 +36,6 @@
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql.Design" Version="1.1.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
 		<PackageReference Include="System.Management" Version="7.0.2" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="wwwroot\ServeStaticFiles\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="wwwroot\ServeStaticFiles\File1\HelloWorld.txt" />
 	</ItemGroup>
 
 	<!--<ItemGroup>-->
