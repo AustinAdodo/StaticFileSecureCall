@@ -42,6 +42,7 @@ internal class Program
             SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
             ConnStrbuilder.Password = pass;
             var securePassword = new SecureString();
+            _logger.LogInformation("Connection string successfully initialised in development environment");
             if (ConnStrbuilder != null) connectionString = ConnStrbuilder.ToString();
         }
 
@@ -75,6 +76,7 @@ internal class Program
                 if (devConnection == null) throw new ArgumentNullException("Connection String cannot be null");
                 SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
                 ConnStrbuilder.Password = password;
+                _logger.LogInformation("Connection string successfully initialised in Production environment");
                 if (ConnStrbuilder != null) connectionString = ConnStrbuilder.ToString();
             }
             catch (AmazonSecretsManagerException ex)
