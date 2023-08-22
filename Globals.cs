@@ -1,6 +1,8 @@
 ﻿global using System;
 global using Amazon;
 global using Amazon.Runtime;
+global using Amazon.SecurityToken;
+global using Amazon.SecurityToken.Model;
 global using Amazon.SecretsManager;
 global using Amazon.SecretsManager.Model;
 global using Microsoft.EntityFrameworkCore;
