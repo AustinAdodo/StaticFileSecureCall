@@ -99,7 +99,7 @@ namespace StaticFileSecureCall.Services
         }
 
         /// <summary>
-        /// installed the package : Install-Package AWSSDK.SecurityToken
+        /// installed the package : AWSSDK.SecurityToken to use AmazonSecurityTokenServiceClient.
         /// Primary Role of this function is to return a success Result upon credential confirmation handshake.
         /// Replace YOUR_ACCOUNT_ID with your AWS account ID and YOUR_ROLE_NAME with the name of the IAM role you want to assume.
         /// </summary>
@@ -117,10 +117,12 @@ namespace StaticFileSecureCall.Services
             try
             {
                 AssumeRoleResponse assumeRoleResponse = await stsClient.AssumeRoleAsync(assumeRoleRequest);
+                _logger.LogInformation("Successful Retrieval of handshake from AWS");
                 return CredentialValidationResult.Success;
             }
             catch (AmazonSecurityTokenServiceException)
             {
+                _logger.LogInformation("Unsuccessful Retrieval of handshake from AWS");
                 return CredentialValidationResult.Failure;
             }
         }
