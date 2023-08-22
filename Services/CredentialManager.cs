@@ -117,10 +117,12 @@ namespace StaticFileSecureCall.Services
             try
             {
                 AssumeRoleResponse assumeRoleResponse = await stsClient.AssumeRoleAsync(assumeRoleRequest);
+                _logger.LogInformation("Successful Retrieval of handshake from AWS");
                 return CredentialValidationResult.Success;
             }
             catch (AmazonSecurityTokenServiceException)
             {
+                _logger.LogInformation("Unsuccessful Retrieval of handshake from AWS");
                 return CredentialValidationResult.Failure;
             }
         }
