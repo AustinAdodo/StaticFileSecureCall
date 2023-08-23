@@ -7,6 +7,7 @@ internal class Program
     /// *********** the inheriting middleware to be registered as transient service.
     /// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
     /// ************ static file Middleware must be placed before app.UserRouting().
+    /// ************ The HttpContextAccessor is singleton by default and the AddHttpContextAccessor resoles to its default implementation.
     /// </summary>
     /// <param name="args"></param>
     private static readonly ILogger<Program> _logger = CreateLogger();
@@ -133,8 +134,8 @@ internal class Program
         builder.Services.AddMemoryCache();
         builder.Services.AddDistributedMemoryCache();
         builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
-        builder.Services.AddScoped<ICredentialService, CredentialManager>();
-        builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
+        builder.Services.AddTransient<ICredentialService, CredentialManager>();
+        builder.Services.AddTransient<IKeyGenerator, KeyMaster>();
         builder.Services.AddScoped<IPersistence, PersistenceService>();
         builder.Services.AddScoped<IMailDeliveryService, MailManager>();
         builder.Services.AddDbContextPool<AppDbContext>(options =>
