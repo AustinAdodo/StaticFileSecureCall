@@ -6,3 +6,4 @@
 ###### Generic DBSets&lt;TEntity&gt; should only reference Microsoft.EntityFrameworkCore namespace.
 ###### Autofac may be introduced if dependencies become too many for cleaner code and maintainability
 ###### Code Architecture heavilty utilisd Domain Driven Design (D.D.D.) and dpendency injection(D.I.).
+###### Dpendency Injection has been heavily utilized to maintain astraction from Service templates and their respective implmentations.
