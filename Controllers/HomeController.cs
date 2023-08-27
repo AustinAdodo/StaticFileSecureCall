@@ -200,13 +200,13 @@ namespace StaticFileSecureCall.Controllers
                     retries++;
                     _cache.Set("retries", retries);
                     string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
-                    condition = resultKey == receivedkeySecret;
+                    condition = resultKey == receivedkeySecret; // handshake Condition.
                     if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
                     if (retries >= 3)
                     {
-                        return NotFound();
+                        return StatusCode(StatusCodes.Status406NotAcceptable, "Maximum retries reached on endpoint.");
                     }
-                    throw new Exception("API call failed");
+                    throw new Exception("Credential Handshake for Document access Failed.");
                 }
                 else
                 {
