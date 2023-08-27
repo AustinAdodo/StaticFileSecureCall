@@ -165,13 +165,13 @@ namespace StaticFileSecureCall.Controllers
                 _generator.ConfigureKeyAsync();
                 string message = $"A token has been sent to the admin, kindly request for this token, " +
                     $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
-                    $"This token will expire in 45 minutes."+
+                    $"This token will expire in 45 minutes." +
                     $"Input the provided 'Secret' and 'Secret Name' on the input body tag. ";
                 return Ok(message);
             }
             else
             {
-                return StatusCode(StatusCodes.Status403Forbidden,_errorMessage); // 403 Forbidden
+                return StatusCode(StatusCodes.Status403Forbidden, _errorMessage); // 403 Forbidden
             }
         }
 
@@ -194,10 +194,25 @@ namespace StaticFileSecureCall.Controllers
             try
             {
                 //add retries through caching.
-                if(!iscach)
-                string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
-                condition = resultKey == receivedkeySecret;
-                if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+                int retries = _cache.TryGetValue("retries", out int retriesCount) ? retriesCount : 0;
+                if (retries < 3)
+                {
+                    retries++;
+                    _cache.Set("retries", retries);
+                    string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
+                    condition = resultKey == receivedkeySecret;
+                    if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+                    if (retries >= 3)
+                    {
+                        return NotFound();
+                    }
+                    throw new Exception("API call failed");
+                }
+                else
+                {
+                    _cache.Remove("retries");
+                    return NotFound();
+                }
             }
             catch (AWSCommonRuntimeException ex)
             {
