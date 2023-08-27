@@ -1,4 +1,6 @@
-﻿namespace StaticFileSecureCall.Controllers
+﻿using Microsoft.Extensions.Caching.Memory;
+
+namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
     /// **************All Controllers developed by Austin.
@@ -27,9 +29,9 @@
         private readonly IMailDeliveryService _emailService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ICredentialService _credenialService;
-        private readonly Ica
+        private readonly IMemoryCache _cache;
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService, IMemoryCache cache)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
@@ -39,6 +41,7 @@
             _emailService = emailService;
             _webHostEnvironment = webHostEnvironment;
             _credenialService = credenialService;
+            _cache = cache;
         }
 
         /// <summary>
