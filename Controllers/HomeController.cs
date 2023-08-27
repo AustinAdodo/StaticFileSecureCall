@@ -1,4 +1,6 @@
-﻿namespace StaticFileSecureCall.Controllers
+﻿using Microsoft.Extensions.Caching.Memory;
+
+namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
     /// **************All Controllers developed by Austin.
@@ -7,6 +9,7 @@
     /// **************Whenever there is a third request within the windows of five seconds
     /// **************Developed by Austin.
     /// **************Internal members should use an API key to execute am upload
+    /// ************** NB there may be a need to Install-Package Polly if a more rubust way to implement retries are required in the future.
     /// </summary>
 
     [Route("/")]
@@ -26,8 +29,9 @@
         private readonly IMailDeliveryService _emailService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ICredentialService _credenialService;
+        private readonly IMemoryCache _cache;
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService, IMemoryCache cache)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
@@ -37,6 +41,7 @@
             _emailService = emailService;
             _webHostEnvironment = webHostEnvironment;
             _credenialService = credenialService;
+            _cache = cache;
         }
 
         /// <summary>
@@ -160,13 +165,13 @@
                 _generator.ConfigureKeyAsync();
                 string message = $"A token has been sent to the admin, kindly request for this token, " +
                     $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
-                    $"This token will expire in 45 minutes."+
+                    $"This token will expire in 45 minutes." +
                     $"Input the provided 'Secret' and 'Secret Name' on the input body tag. ";
                 return Ok(message);
             }
             else
             {
-                return StatusCode(StatusCodes.Status403Forbidden,_errorMessage); // 403 Forbidden
+                return StatusCode(StatusCodes.Status403Forbidden, _errorMessage); // 403 Forbidden
             }
         }
 
@@ -177,7 +182,7 @@
         /// <param name="receivedkeyName"></param>
         /// <returns></returns>
         [HttpGet("reqCurrent/{refid}")]
-        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        [LimitRequest(MaxRequests = 5, TimeWindow = 3600)]
         public async Task<IActionResult> ProceedToDownload([FromQuery] string receivedkeySecret, [FromQuery] string receivedkeyName)
         {
             //retrieve KeyName for Secret from AWS vault.
@@ -188,10 +193,26 @@
             bool condition = false;
             try
             {
-                //add retries
-                string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
-                condition = resultKey == receivedkeySecret;
-                if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+                //add retries through caching.
+                int retries = _cache.TryGetValue("retries", out int retriesCount) ? retriesCount : 0;
+                if (retries < 3)
+                {
+                    retries++;
+                    _cache.Set("retries", retries);
+                    string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
+                    condition = resultKey == receivedkeySecret; // handshake Condition.
+                    if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+                    if (retries >= 3)
+                    {
+                        return StatusCode(StatusCodes.Status406NotAcceptable, "Maximum retries reached on endpoint.");
+                    }
+                    throw new Exception("Credential Handshake for Document access Failed.");
+                }
+                else
+                {
+                    _cache.Remove("retries");
+                    return NotFound();
+                }
             }
             catch (AWSCommonRuntimeException ex)
             {
