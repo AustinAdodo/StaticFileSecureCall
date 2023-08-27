@@ -7,6 +7,7 @@
     /// **************Whenever there is a third request within the windows of five seconds
     /// **************Developed by Austin.
     /// **************Internal members should use an API key to execute am upload
+    /// ************** NB there may be a need to Install-Package Polly if a more rubust way to implement retries are required in the future.
     /// </summary>
 
     [Route("/")]
@@ -26,6 +27,7 @@
         private readonly IMailDeliveryService _emailService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ICredentialService _credenialService;
+        private readonly Ica
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
             IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
         {
@@ -188,7 +190,8 @@
             bool condition = false;
             try
             {
-                //add retries
+                //add retries through caching.
+                if(!iscach)
                 string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
                 condition = resultKey == receivedkeySecret;
                 if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
