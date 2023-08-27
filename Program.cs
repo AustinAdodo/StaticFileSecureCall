@@ -54,8 +54,8 @@ internal class Program
             {
                 //cache
                 var awsOptions = configuration.GetAWSOptions();
-                var secretNameMain = "StaticFileSecureCall"; //AWS access key ID
-                var authenticationSecret = ""; //AWS secret access key
+                var secretNameMain = "AKIAVJFM4BOJNE3S42PC"; //AWS access key ID
+                var authenticationSecret = "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"; //AWS secret access key
                 var secretNameConn = "ConnectionStringSecret"; //retrieval of the connectionString Password.
                 AWSCredentials credentials = new BasicAWSCredentials(secretNameMain, authenticationSecret);
                 var config = new AmazonSecretsManagerConfig
