@@ -182,7 +182,7 @@ namespace StaticFileSecureCall.Controllers
         /// <param name="receivedkeyName"></param>
         /// <returns></returns>
         [HttpGet("reqCurrent/{refid}")]
-        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        [LimitRequest(MaxRequests = 5, TimeWindow = 3600)]
         public async Task<IActionResult> ProceedToDownload([FromQuery] string receivedkeySecret, [FromQuery] string receivedkeyName)
         {
             //retrieve KeyName for Secret from AWS vault.
