@@ -1,8 +1,10 @@
 # Use the appropriate base image for .NET 6.0
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
+EXPOSE 7115
+EXPOSE 5225
+#EXPOSE 80
+#EXPOSE 443
 
 # Use the appropriate base image for .NET 6.0 SDK for building
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
