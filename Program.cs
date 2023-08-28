@@ -27,7 +27,7 @@ internal class Program
 
         //setup configuration and Environment
         var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        CurrentEnvironment = "Production";
+        //CurrentEnvironment = "Production";
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
