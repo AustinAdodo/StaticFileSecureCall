@@ -27,6 +27,7 @@ internal class Program
 
         //setup configuration and Environment
         var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        CurrentEnvironment = "Production";
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -54,8 +55,8 @@ internal class Program
             {
                 //cache
                 var awsOptions = configuration.GetAWSOptions();
-                var secretNameMain = "AKIAVJFM4BOJNE3S42PC"; //AWS access key ID
-                var authenticationSecret = "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"; //AWS secret access key
+                var secretNameMain = "AKIAVJFM4BOJFHI6AYAG "; //AWS access key ID
+                var authenticationSecret = "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"; //AWS secret access key
                 var secretNameConn = "ConnectionStringSecret"; //retrieval of the connectionString Password.
                 AWSCredentials credentials = new BasicAWSCredentials(secretNameMain, authenticationSecret);
                 var config = new AmazonSecretsManagerConfig
