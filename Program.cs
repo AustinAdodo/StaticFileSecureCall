@@ -24,7 +24,6 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         //CreateHostBuilder(args).Build().Run();
-
         //setup configuration and Environment
         var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         //CurrentEnvironment = "Production";
@@ -94,6 +93,13 @@ internal class Program
         // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
+        //builder.Services.ConfigureKestrel(options =>
+        //{
+        //    options.Listen(IPAddress.Any, 443, listenOptions =>
+        //    {
+        //        listenOptions.UseHttps(); // Enable HTTPS
+        //    });
+        //});
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = ApiKeyDefaults.AuthenticationScheme;
