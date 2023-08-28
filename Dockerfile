@@ -8,7 +8,6 @@ EXPOSE 5225
 
 ENV ASPNETCORE_URLS=https://+:7115
 
-
 # Use the appropriate base image for .NET 6.0 SDK for building
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
