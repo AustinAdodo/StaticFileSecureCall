@@ -176,6 +176,8 @@ namespace StaticFileSecureCall.Controllers
         }
 
         /// <summary>
+        /// Uses an in memeory Cache for automatic retries to optimize queries.
+        /// This Endpoint is rate Limited.
         /// </summary>
         /// <param name="receivedkeySecret"></param>
         /// <param name="receivedkeyName"></param>
@@ -192,7 +194,7 @@ namespace StaticFileSecureCall.Controllers
             bool condition = false;
             try
             {
-                //add retries through caching.
+                //add retries through caching.if retries do not exist in the in memory cache, set it to 0.
                 int retries = _cache.TryGetValue("retries", out int retriesCount) ? retriesCount : 0;
                 if (retries < 3)
                 {
