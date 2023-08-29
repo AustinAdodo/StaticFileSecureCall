@@ -13,13 +13,11 @@ namespace StaticFileSecureCall.Models
         [Required]
         public int id { get; set; }
         [Required]
-        public string Filename { get; set; }
+        public string Filename { get; set; } = string.Empty;
         [Required]
-        public string Address { get; set; }
-        [Required]
-        public string InternalId { get; set; }
+        public string Address { get; set; }= string.Empty;
+        [Required] public string InternalId { get; set; } = string.Empty;
 
-        [Required]
-        public string Reference { get; set; }
+        [Required] public string Reference { get; set; } = string.Empty;
     }
 }
