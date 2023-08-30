@@ -98,7 +98,8 @@ namespace StaticFileSecureCall.Controllers
                     }
                 }
             }
-            return Ok("Directory uploaded successfully.");
+            await _persistenceService.SaveFileAsync($"Check{Guid.NewGuid()}");
+            return Ok($"Directory uploaded successfully. Please Save its Filename Check{Guid.NewGuid()}");
         }
 
         private async Task<string> WriteFile(IFormFile file, string DirectoryPath)
