@@ -1,15 +1,17 @@
 using System.Data.Common;
 
+/// <summary>
+/// *********** This is the application entry point.
+/// *********** NB:IMiddleware Interface was not implmented because that will require 
+/// *********** the inheriting middleware to be registered as transient service.
+/// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
+/// ************ static file Middleware must be placed before app.UserRouting().
+/// ************ The HttpContextAccessor is singleton by default and the AddHttpContextAccessor resoles to its default implementation.
+/// </summary>
+/// <param name="args"></param>
+/// <returns>Product Configurations for the entire application.</returns>
 internal class Program
 {
-    /// <summary>
-    /// *********** NB:IMiddleware Interface was not implmented because that will require 
-    /// *********** the inheriting middleware to be registered as transient service.
-    /// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
-    /// ************ static file Middleware must be placed before app.UserRouting().
-    /// ************ The HttpContextAccessor is singleton by default and the AddHttpContextAccessor resoles to its default implementation.
-    /// </summary>
-    /// <param name="args"></param>
     private static readonly ILogger<Program> _logger = CreateLogger();
     private static ILogger<Program> CreateLogger()
     {
