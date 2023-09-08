@@ -1,11 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Reflection.Emit;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using StaticFileSecureCall.Models;
-using Microsoft.Extensions.Logging;
-using System.Xml;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
+//using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace StaticFileSecureCall.DataManagement
 {
@@ -18,19 +13,18 @@ namespace StaticFileSecureCall.DataManagement
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
+            //FileRepositories = Set<FileRepository>();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            // Configure the column to store UUID as NVARCHAR(40)
             modelBuilder.Entity<FileRepository>()
                 .Property(e => e.InternalId)
                 .HasMaxLength(40)
                 .IsRequired();
         }
-
-        ///dbsets
+        //public void Configure(EntityTypeBuilder<FileRepository> builder) { }
         public DbSet<FileRepository> FileRepositories { get; set; }
     }
 }

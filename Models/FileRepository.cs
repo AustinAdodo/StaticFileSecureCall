@@ -4,20 +4,20 @@ using StaticFileSecureCall.Validation;
 
 namespace StaticFileSecureCall.Models
 {
-    [UniqueFields(fieldNames: FieldNames.Names)]
+    /// <summary>
+    ///http://go.microsoft.com/fwlink/?LinkId=287068
+    /// </summary>
     public class FileRepository
     {
         [Key]
         [Required]
         public int id { get; set; }
         [Required]
-        public string Filename { get; set; }
+        public string Filename { get; set; } = string.Empty;
         [Required]
-        public string Address { get; set; }
-        [Required]
-        public string InternalId { get; set; }
+        public string Address { get; set; }= string.Empty;
+        [Required] public string InternalId { get; set; } = string.Empty;
 
-        [Required]
-        public string Reference { get; set; }
+        [Required] public string Reference { get; set; } = string.Empty;
     }
 }

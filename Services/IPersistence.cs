@@ -4,9 +4,14 @@ namespace StaticFileSecureCall.Services
 {
     public interface IPersistence
     {
-        public FileRepository GetFile(string internalId);
+        /// <summary>
+        /// Dependencies: 
+        /// </summary>
+        /// <param name="internalId"></param>
+        /// <returns></returns>
+        public Task<FileRepository> GetFileAsync(string internalId);
         Task<FileRepository> UpdateFileAsync(string internalId);
-        Task<List<FileRepository>> GetAllFilesAsync();
+        public Task<IQueryable<FileRepository>> GetAllFilesAsync();
         public Task SaveFileAsync(string fileName);
         void DeleteFileAsync(string internalId);
     }

@@ -1,30 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using StaticFileSecureCall.Services;
-using Microsoft.AspNetCore.StaticFiles;
-using System.Net;
-using System.IO;
-using System.IO.Compression;
-using StaticFileSecureCall.Validation;
-using StaticFileSecureCall.Decorators;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using StaticFileSecureCall.Models;
-using System.Reflection.Metadata.Ecma335;
-using Azure;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting;
-using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
-using static System.Net.Mime.MediaTypeNames;
-using System.Diagnostics.Contracts;
-using System.Net.Sockets;
-using System.IO.Compression;
+﻿using Microsoft.Extensions.Caching.Memory;
 
 namespace StaticFileSecureCall.Controllers
 {
     /// <summary>
+    /// **************All Controllers developed by Austin.
     /// **************Rate Limiting can be configured to each Endpoint independently.
     /// **************For example Here we have configured to allow maximum of two requests for window of five seconds in "Status" Action . 
     /// **************Whenever there is a third request within the windows of five seconds
     /// **************Developed by Austin.
+    /// **************Internal members should use an API key to execute am upload
+    /// ************** NB there may be a need to Install-Package Polly if a more rubust way to implement retries are required in the future.
     /// </summary>
 
     [Route("/")]
@@ -32,7 +17,8 @@ namespace StaticFileSecureCall.Controllers
     //[ServiceFilter(typeof(RateLimitFilter))]
     public class HomeController : Controller
     {
-        public const string baseuri = "";
+        public const string baseuri = "https://apisecurefiletransfer.us-east-1.elasticbeanstalk.com/";
+        public readonly string _currentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT").ToString();
         private const string _errorMessage = "Unauthorized access detected, contact admin";
         private const string _errorMessagekey = "Unauthorized key detected, your access will be blocked if this persists";
         private readonly string[] _authorizedIpAddresses;
@@ -41,10 +27,11 @@ namespace StaticFileSecureCall.Controllers
         private readonly IKeyGenerator _generator;
         private readonly IPersistence _persistenceService;
         private readonly IMailDeliveryService _emailService;
-        private IWebHostEnvironment _webHostEnvironment;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ICredentialService _credenialService;
+        private readonly IMemoryCache _cache;
         public HomeController(IConfiguration configuration, IKeyGenerator generator, IMailDeliveryService emailService,
-            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService)
+            IHttpContextAccessor contextAccessor, ILogger<HomeController> logger, IPersistence persistenceService, IWebHostEnvironment webHostEnvironment, ICredentialService credenialService, IMemoryCache cache)
         {
             _authorizedIpAddresses = (configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>()) ?? new string[] { "192.168.1.1" };
             _generator = generator;
@@ -54,12 +41,15 @@ namespace StaticFileSecureCall.Controllers
             _emailService = emailService;
             _webHostEnvironment = webHostEnvironment;
             _credenialService = credenialService;
+            _cache = cache;
         }
 
         /// <summary>
         /// Confirm If API is Up and Running , NB: This endpoint is rate Limted.
         /// </summary>
         /// <returns></returns>
+        [HttpGet(" ")]
+        [HttpGet("/")]
         [HttpGet("status")]
         [LimitRequest(MaxRequests = 5, TimeWindow = 10)]
         public IActionResult Index()
@@ -71,13 +61,15 @@ namespace StaticFileSecureCall.Controllers
 
         /// <summary>
         /// Only Zip Files can be uploaded to the server.
+        /// Requires API key
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        [HttpPost("Operations/Uploadefolder")]
+        [HttpPost("Operations/Uploadfolder")]
+        //[Authorize(Policy = "ApiKeyPolicy")]
         public async Task<IActionResult> UploadFile([FromForm] UploadDirectoryModel model)
         {
-            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}","ServeStaticFiles",$"Check{Guid.NewGuid()}");
+            string uploadDirectory = Path.Combine($"{_webHostEnvironment.WebRootPath}", "ServeStaticFiles", $"Check{Guid.NewGuid()}");
             if (model.DirectoryZipFile == null || model.DirectoryZipFile.Length == 0)
             {
                 return BadRequest("No zip file provided.");
@@ -106,7 +98,8 @@ namespace StaticFileSecureCall.Controllers
                     }
                 }
             }
-            return Ok("Directory uploaded successfully.");
+            await _persistenceService.SaveFileAsync($"Check{Guid.NewGuid()}");
+            return Ok($"Directory uploaded successfully. Please Save its Filename Check{Guid.NewGuid()}");
         }
 
         private async Task<string> WriteFile(IFormFile file, string DirectoryPath)
@@ -164,53 +157,83 @@ namespace StaticFileSecureCall.Controllers
         {
             //var remoteIpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
             var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
-            string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+            string? formattedIpAddress = remoteIpAddress?.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
                ? remoteIpAddress.MapToIPv4().ToString()
                : remoteIpAddress.ToString();
             if (_authorizedIpAddresses.Contains(formattedIpAddress))
             {
                 // Authorized logic
-                string message = $"A token has been sent to the admin, kindly request for this token" +
-                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
-                    $"This token will expire in 45 minutes.";
                 _generator.ConfigureKeyAsync();
+                string message = $"A token has been sent to the admin, kindly request for this token, " +
+                    $"use {baseuri}/reqCurrent/name, where 'name' is the Secret Name provided by the admin." +
+                    $"This token will expire in 45 minutes." +
+                    $"Input the provided 'Secret' and 'Secret Name' on the input body tag. ";
                 return Ok(message);
             }
             else
             {
-                return Forbid(_errorMessage); // 403 Forbidden
+                return StatusCode(StatusCodes.Status403Forbidden, _errorMessage); // 403 Forbidden
             }
         }
 
         /// <summary>
-        /// 
+        /// Uses an in memeory Cache for automatic retries to optimize queries.
+        /// This Endpoint is rate Limited.
         /// </summary>
         /// <param name="receivedkeySecret"></param>
         /// <param name="receivedkeyName"></param>
         /// <returns></returns>
         [HttpGet("reqCurrent/{refid}")]
-        [LimitRequest(MaxRequests = 3, TimeWindow = 3600)]
+        [LimitRequest(MaxRequests = 8, TimeWindow = 3600)]
         public async Task<IActionResult> ProceedToDownload([FromQuery] string receivedkeySecret, [FromQuery] string receivedkeyName)
         {
             //retrieve KeyName for Secret from AWS vault.
             string? refid = _contextAccessor.HttpContext?.Request.Query["refid"].ToString();
             FileRepository result = new FileRepository();
+            receivedkeyName = "TestCredential";
             refid = "9CC8E423-C217-4C9C-B3FD-C82E286B0F0C";
-            //string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName); ..use try
-            //bool condition = resultKey == receivedkeySecret;
-            bool condition = true;
+            bool condition = false;
+            try
+            {
+                //add retries through caching.if retries do not exist in the in memory cache, set it to 0.
+                int retries = _cache.TryGetValue("retries", out int retriesCount) ? retriesCount : 0;
+                if (retries < 3)
+                {
+                    retries++;
+                    _cache.Set("retries", retries);
+                    string resultKey = await _credenialService.ImportCredentialAsync(receivedkeyName);
+                    condition = resultKey == receivedkeySecret; // handshake Condition.
+                    if (condition == false) return StatusCode(StatusCodes.Status406NotAcceptable, "Failed Credential Verification");
+                    if (retries >= 3)
+                    {
+                        return StatusCode(StatusCodes.Status406NotAcceptable, "Maximum retries reached on endpoint.");
+                    }
+                    throw new Exception("Credential Handshake for Document access Failed.");
+                }
+                else
+                {
+                    _cache.Remove("retries");
+                    return NotFound();
+                }
+            }
+            catch (AWSCommonRuntimeException ex)
+            {
+                if (_currentEnvironment == Environments.Development) throw;
+                if (_currentEnvironment == Environments.Production) return StatusCode(406, ex.Message);
+            }
             if (condition)
             {
                 try
                 {
-                    var all = _persistenceService.GetAllFilesAsync().Result;
+                    //add retries
+                    var all = await _persistenceService.GetAllFilesAsync().Result.ToListAsync();
                     result = all.Where(a => a.InternalId == refid).First();
                 }
                 catch (Exception ex)
                 {
                     string Errormsg = $"Error Retrieving From database {ex.Message}";
                     _logger.LogInformation(message: $"{Errormsg}");
-                    return StatusCode(404, "Problem reading database");
+                    return StatusCode(404, $"Problem reading database, Details : {ex.Message}");
                 }
                 try
                 {
@@ -222,7 +245,7 @@ namespace StaticFileSecureCall.Controllers
                   : remoteIpAddress.ToString();
                     if (_authorizedIpAddresses.Contains(formattedIpAddress)) // and name and secret matches.
                     {
-                        Download(result);
+                        DownloadZip(result);
                         return Ok("Download Initiated");
                     }
                     else
@@ -238,7 +261,7 @@ namespace StaticFileSecureCall.Controllers
                     return StatusCode(404, Errormsg);
                 }
             }
-            else return StatusCode(404, _errorMessagekey);
+            else return StatusCode(StatusCodes.Status417ExpectationFailed, _errorMessagekey);
         }
 
         /// <summary>
@@ -247,12 +270,10 @@ namespace StaticFileSecureCall.Controllers
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        private IActionResult Download(FileRepository model)
+        private IActionResult DownloadZip(FileRepository model)
         {
-            //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "ServeStaticFiles", model.Filename);
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", model.Filename);
-            //var filePath = $"~\\wwwroot\\ServeStaticFiles\\{model.Filename}";
-            bool condition = Directory.Exists(filePath);
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "ServeStaticFiles", $"{model.Filename}.zip");
+            bool condition = System.IO.File.Exists(filePath);
             if (condition)
             {
                 var memory = new MemoryStream();
@@ -261,8 +282,8 @@ namespace StaticFileSecureCall.Controllers
                     stream.CopyTo(memory);
                 }
                 memory.Position = 0;
-                var contentType = GetContentType(filePath);
-                // Serve the file for download
+                var contentType = "application/zip"; // MIME type for ZIP files
+                // Serve the ZIP file for download
                 var result = File(memory, contentType, Path.GetFileName(filePath));
                 // Send the confirmation email
                 var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
@@ -281,7 +302,7 @@ namespace StaticFileSecureCall.Controllers
             }
             else
             {
-                return NotFound("The File you're attempting to download couldn't be located or isn't 'Switched On'");
+                return NotFound("The ZIP File you're attempting to download couldn't be located or isn't 'Switched On'");
             }
         }
 
@@ -307,3 +328,41 @@ namespace StaticFileSecureCall.Controllers
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//var memory = new MemoryStream();
+//using (var stream = new FileStream(filePath, FileMode.Open))
+//{
+//    stream.CopyTo(memory);
+//}
+//memory.Position = 0;
+//var contentType = GetContentType(filePath);
+//// Serve the file for download
+//var result = File(memory, contentType, Path.GetFileName(filePath));
+//// Send the confirmation email
+//var remoteIpAddress = _contextAccessor.HttpContext?.Connection.RemoteIpAddress;
+//string? formattedIpAddress = remoteIpAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+//? remoteIpAddress.MapToIPv4().ToString()
+//: remoteIpAddress.ToString();
+//var details = new MailDeliveryConfirmationContentModel
+//{
+//    Filename = model.Filename,
+//    UserIpAddress = formattedIpAddress,
+//    FileId = model.InternalId,
+//    EmailAddress = ""
+//};
+//_emailService.SendConfirmationEmailAsync(details);
+//return result;

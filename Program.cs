@@ -1,56 +1,51 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Builder;
-using Amazon.Extensions.NETCore.Setup;
-using Microsoft.AspNetCore.Hosting;
-using Amazon.SimpleEmail;
-using System.IO;
-using Amazon;
-using Amazon.SecretsManager;
-using Amazon.SecretsManager.Model;
-using Microsoft.Extensions.Configuration;
-//using Microsoft.AspNetCore.Authentication.JwtBearer;
-using StaticFileSecureCall;
-using StaticFileSecureCall.DataManagement;
-using StaticFileSecureCall.Services;
-using System;
-using AspNetCoreRateLimit;
-using Microsoft.Extensions.Hosting;
-using System.Text.Json;
-using Microsoft.Extensions.Options;
-using System.ComponentModel.Design;
-using System.Data.Entity;
-using Microsoft.Extensions.FileProviders;
+using System.Data.Common;
 
+/// <summary>
+/// *********** This is the application entry point.
+/// *********** NB:IMiddleware Interface was not implmented because that will require the inheriting middleware to be registered as transient service
+/// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
+/// ************ static file Middleware must be placed before app.UserRouting().
+/// ************ The HttpContextAccessor is singleton by default and the AddHttpContextAccessor resoles to its default implementation.
+/// </summary>
+/// <param name="args"></param>
+/// <returns>Product Configurations for the entire application.</returns>
 internal class Program
 {
-    /// <summary>
-    /// ***********NB:IMiddleware Interface was not implmented because that will require 
-    /// ***********the inheriting middleware to be registered as transient service.
-    /// ************ For load-balanced API Cache to handle rate limiting when app becomes large use Redis.
-    /// ************ static file Middleware must be placed before app.UserRouting().
-    /// </summary>
-    /// <param name="args"></param>
+    private static readonly ILogger<Program> _logger = CreateLogger();
+    private static ILogger<Program> CreateLogger()
+    {
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+        });
+        return loggerFactory.CreateLogger<Program>();
+    }
 
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         //CreateHostBuilder(args).Build().Run();
-
         //setup configuration and Environment
         var CurrentEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        //CurrentEnvironment = "Production";
         IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{CurrentEnvironment}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
+        _logger.LogInformation("Application starting...");
         string connectionString = string.Empty;
         if (CurrentEnvironment == Environments.Development)
         {
             var authorizedIpAddresses = configuration.GetSection("AppSettings:AuthorizedIpAddresses").Get<string[]>();
-            string? dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();
-            var devConnection = builder.Configuration.GetConnectionString("FileConnection")?.Replace("__DB_PASSWORD__", dbPassword);
-            if (devConnection != null) connectionString = devConnection;
+            string? pass = Environment.GetEnvironmentVariable("DB_PASSWORD")?.ToString();
+            var devConnection = builder.Configuration.GetConnectionString("FileConnection")?.ToString();
+            SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
+            ConnStrbuilder.Password = pass;
+            var securePassword = new SecureString();
+            _logger.LogInformation("Connection string successfully initialised in development environment");
+            if (ConnStrbuilder != null) connectionString = ConnStrbuilder.ToString();
         }
 
         //AWS ConnectionString Configurations options.
@@ -58,12 +53,20 @@ internal class Program
         {
             try
             {
+                //cache
                 var awsOptions = configuration.GetAWSOptions();
+                var secretNameMain = "AKIAVJFM4BOJFHI6AYAG "; //AWS access key ID
+                var authenticationSecret = "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"; //AWS secret access key
+                var secretNameConn = "ConnectionStringSecret"; //retrieval of the connectionString Password.
+                AWSCredentials credentials = new BasicAWSCredentials(secretNameMain, authenticationSecret);
+                var config = new AmazonSecretsManagerConfig
+                {
+                    RegionEndpoint = RegionEndpoint.GetBySystemName(awsOptions.Region.SystemName)
+                };
                 using var secretsManagerClient = new AmazonSecretsManagerClient(awsOptions.Region);
-                var secretName = "StaticFileSecureCall";
                 var request = new GetSecretValueRequest
                 {
-                    SecretId = secretName
+                    SecretId = secretNameConn
                 };
                 var response = await secretsManagerClient.GetSecretValueAsync(request);
                 if (response.SecretString == null) throw new Exception("Secret string is empty or null.");
@@ -71,24 +74,51 @@ internal class Program
                 var secretObject = JsonSerializer.Deserialize<Dictionary<string, string>>(secret);
                 var password = secretObject["password"];
                 //Update the connection string in IConfiguration
-                configuration["ConnectionStrings:FileConnection"] = configuration["ConnectionStrings:FileConnection"]?.Replace("__PASSWORD__", password);
-                connectionString = configuration["ConnectionStrings:FileConnection"].ToString();
+                string? devConnection = configuration["ConnectionStrings:FileConnection"];
+                if (devConnection == null) throw new ArgumentNullException("Connection String cannot be null");
+                SqlConnectionStringBuilder ConnStrbuilder = new SqlConnectionStringBuilder(devConnection);
+                ConnStrbuilder.Password = password;
+                _logger.LogInformation("Connection string successfully initialised in Production environment");
+                if (ConnStrbuilder != null) connectionString = ConnStrbuilder.ToString();
             }
             catch (AmazonSecretsManagerException ex)
             {
-                Console.WriteLine($"AWS Secrets Manager exception: {ex.Message}");
+                _logger.LogError($"AWS Secrets Manager exception: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                _logger.LogError($"An error occurred: {ex.Message}");
             }
         }
 
         // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-
-        //Configure Rate Limiting Policy and  rate limiting options
+        //builder.Services.ConfigureKestrel(options =>
+        //{
+        //    options.Listen(IPAddress.Any, 443, listenOptions =>
+        //    {
+        //        listenOptions.UseHttps(); // Enable HTTPS
+        //    });
+        //});
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = ApiKeyDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = ApiKeyDefaults.AuthenticationScheme;
+        })
+         .AddApiKeyInHeaderOrQueryParams<ApiKeyProvider>(options =>
+        {
+            options.Realm = "Your API";
+            options.KeyName = "x-api-key"; // The header or query parameter name for the API key
+        });
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("ApiKeyPolicy", policy =>
+            {
+                policy.AddAuthenticationSchemes(ApiKeyDefaults.AuthenticationScheme);
+                policy.RequireAuthenticatedUser();
+            });
+        });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
@@ -112,8 +142,8 @@ internal class Program
         builder.Services.AddMemoryCache();
         builder.Services.AddDistributedMemoryCache();
         builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
-        builder.Services.AddScoped<ICredentialService, CredentialManager>();
-        builder.Services.AddScoped<IKeyGenerator, KeyMaster>();
+        builder.Services.AddTransient<ICredentialService, CredentialManager>();
+        builder.Services.AddTransient<IKeyGenerator, KeyMaster>();
         builder.Services.AddScoped<IPersistence, PersistenceService>();
         builder.Services.AddScoped<IMailDeliveryService, MailManager>();
         builder.Services.AddDbContextPool<AppDbContext>(options =>
