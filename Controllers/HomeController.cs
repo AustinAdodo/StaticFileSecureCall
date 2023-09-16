@@ -122,7 +122,10 @@ namespace StaticFileSecureCall.Controllers
         }
 
         /// <summary>
-        /// Endpoint to Confirm Access, this uses the clients API and other variables
+        /// Endpoint to Confirm Access.
+        /// <para>
+        /// This uses the clients API and other variables.
+        /// </para>
         /// NB: This endpoint is rate Limited.
         /// </summary>
         /// <returns></returns>
