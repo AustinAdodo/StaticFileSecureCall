@@ -91,7 +91,9 @@ internal class Program
             }
         }
 
-        // Add services to the container. Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        #region service Providers
+        //extend all with extension method.
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         //builder.Services.ConfigureKestrel(options =>
@@ -127,6 +129,8 @@ internal class Program
         builder.Services.AddInMemoryRateLimiting();
         builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+
+        #endregion
 
         //Add Swagger and other Services to Pipeline.
         builder.Services.AddSwaggerGen();

@@ -7,7 +7,7 @@ using System.Data.Entity.Infrastructure;
 namespace StaticFileSecureCall.Services
 {
     /// <summary>
-    /// This is a layer on the Query Provider : Must Implement IDbAsyncEnumerable<FileRepository> as sepcified when using EF6.
+    /// This is a layer on the Query Provider : Must Implement IDbAsyncEnumerable<FileRepository> as specified when using EF6.
     /// IQueryable operations are not executed immediately; they build up an expression tree that represents the query.
     /// </summary>
     public class PersistenceService : IPersistence
