@@ -1,3 +1,4 @@
+using StaticFileSecureCall.Lib.ServiceCollectionxtensions;
 using System.Data.Common;
 
 /// <summary>
@@ -123,13 +124,8 @@ internal class Program
         });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
-        builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
         builder.Services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
         builder.Services.Configure<IpRateLimitPolicies>(configuration.GetSection("IpRateLimitPolicies"));
-        builder.Services.AddInMemoryRateLimiting();
-        builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-        builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-
         #endregion
 
         //Add Swagger and other Services to Pipeline.
@@ -145,17 +141,13 @@ internal class Program
         });
         builder.Services.AddMemoryCache();
         builder.Services.AddDistributedMemoryCache();
-        builder.Services.AddTransient<IAmazonSimpleEmailService, AmazonSimpleEmailServiceClient>();
-        builder.Services.AddTransient<ICredentialService, CredentialManager>();
-        builder.Services.AddTransient<IKeyGenerator, KeyMaster>();
-        builder.Services.AddScoped<IPersistence, PersistenceService>();
-        builder.Services.AddScoped<IMailDeliveryService, MailManager>();
         builder.Services.AddDbContextPool<AppDbContext>(options =>
    options.UseSqlServer(connectionString));
         builder.Services.AddDbContextPool<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect("OtherConnection")));
-        builder.Services.AddHttpContextAccessor();
         builder.Services.AddLogging();
+
+        builder.Services.AddAssetCapitalBusinessServices(); //Extension method to add business services
 
         // Configure AWS services
         builder.Services.AddDefaultAWSOptions(configuration.GetAWSOptions());
