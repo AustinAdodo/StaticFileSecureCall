@@ -19,7 +19,7 @@ namespace StaticFileSecureCall.Lib.ServiceCollectionxtensions
             return services;
         }
 
-        public static IServiceCollection AddZelvorConfigs(this IServiceCollection services, ConfigurationManager configurationManager)
+        public static IServiceCollection AddAssetCapitalConfigurations(this IServiceCollection services, ConfigurationManager configurationManager)
         {
             return services;
         }
