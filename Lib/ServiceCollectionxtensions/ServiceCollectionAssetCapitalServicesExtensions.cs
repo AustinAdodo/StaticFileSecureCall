@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-
+﻿
 namespace StaticFileSecureCall.Lib.ServiceCollectionxtensions
 {
     public static class ServiceCollectionAssetCapitalServicesExtensions
@@ -17,6 +16,11 @@ namespace StaticFileSecureCall.Lib.ServiceCollectionxtensions
             services.AddTransient<IKeyGenerator, KeyMaster>();
             services.AddScoped<IPersistence, PersistenceService>();
             services.AddScoped<IMailDeliveryService, MailManager>();
+            return services;
+        }
+
+        public static IServiceCollection AddZelvorConfigs(this IServiceCollection services, ConfigurationManager configurationManager)
+        {
             return services;
         }
     }
